@@ -2,6 +2,7 @@ package se.lth.cs.sovel.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.lang.model.element.ExecutableElement;
@@ -15,18 +16,31 @@ import javax.lang.model.util.SimpleTypeVisitor8;
 
 public class Definition {
 	private final ExecutableElement method;
+	private List<Condition> cond;
 
 	public Definition(ExecutableElement method) {
 		this.method = method;
 	}
 
 	public List<Condition> getConditions() {
-		List<Condition> result = new ArrayList<>();
-		int i = 0;
-		for (TypeMirror t : getParamTypes()) {
-			t.accept(new ConditionAdder(result, i++), null);
+		if (cond == null) {
+			cond = new ArrayList<>();
+			int i = 0;
+			for (TypeMirror t : getParamTypes()) {
+				t.accept(new ConditionAdder(cond, i++), null);
+			}
 		}
-		return result;
+		return cond;
+	}
+
+	public boolean isSelectable(Map<Condition, Boolean> knowledge) {
+		return getConditions().stream()
+				.allMatch(cond -> knowledge.getOrDefault(cond, false));
+	}
+
+	public boolean isUnknown(Map<Condition, Boolean> knowledge) {
+		return getConditions().stream()
+				.anyMatch(cond -> !knowledge.containsKey(cond));
 	}
 	
 	private static class ConditionAdder extends SimpleTypeVisitor8<Void, Void> {
@@ -74,5 +88,10 @@ public class Definition {
 
 	public List<TypeMirror> getParamTypes() {
 		return method.getParameters().stream().map(VariableElement::asType).collect(Collectors.toList());
+	}
+
+	@Override
+	public String toString() {
+		return method.toString();
 	}
 }

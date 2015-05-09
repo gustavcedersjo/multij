@@ -20,6 +20,11 @@ public class Condition {
 	}
 
 	@Override
+	public String toString() {
+		return "Condition("+argument+", "+type+")";
+	}
+
+	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;

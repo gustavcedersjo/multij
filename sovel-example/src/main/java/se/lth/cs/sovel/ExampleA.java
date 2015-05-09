@@ -1,5 +1,6 @@
 package se.lth.cs.sovel;
 
+import java.io.Closeable;
 
 @Module
 public interface ExampleA {
@@ -17,6 +18,12 @@ public interface ExampleA {
 	@Method
 	public default int hello(Object o, int x) {
 		return 3;
+	}
+
+	@Method
+	public default void ambiguous(Runnable r) {
+	}
+	public default void ambiguous(Closeable c) {
 	}
 
 }

@@ -42,7 +42,11 @@ public class Universe {
 						.collect(toList());
 			}
 		} else {
-			return Collections.emptyList();
+			return types.stream()
+					.filter(this::isClass)
+					.filter(this::isFinal)
+					.filter(t -> !util.isSubtype(t, type))
+					.collect(toList());
 		}
 	}
 

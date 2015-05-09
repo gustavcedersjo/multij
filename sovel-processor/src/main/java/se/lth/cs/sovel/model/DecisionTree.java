@@ -106,7 +106,7 @@ public class DecisionTree {
 		}
 		
 		public void generateCode(PrintWriter writer, String module, int indent) {
-			writer.println(indent(indent) + "throw new Error();");
+			writer.println(indent(indent) + "throw new se.lth.cs.sovel.AmbiguityException();");
 		}
 
 	}

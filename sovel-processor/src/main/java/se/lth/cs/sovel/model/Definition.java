@@ -77,7 +77,11 @@ public class Definition {
 		}
 
 	}
-
+	
+	public ExecutableElement getMethod() {
+		return method;
+	}
+	
 	public CharSequence getMethodName() {
 		return method.getSimpleName();
 	}

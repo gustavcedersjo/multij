@@ -45,14 +45,12 @@ public class DecisionTreeGenerator {
 	}
 
 	public static class Builder {
-		private final List<ExecutableElement> methods;
 		private final List<Definition> definitions;
 		private final List<Analysis> analyses;
 		private final Types util;
 		private final Universe.Builder universe;
 
 		private Builder(List<Analysis> analyses, Types util) {
-			methods = new ArrayList<>();
 			definitions = new ArrayList<>();
 			this.analyses = analyses;
 			this.util = util;
@@ -60,11 +58,10 @@ public class DecisionTreeGenerator {
 		}
 
 		public void add(ExecutableElement element) {
+			Definition def = new Definition(element);
 			boolean okay = analyses.stream()
-					.allMatch(a -> a.check(methods, element));
+					.allMatch(a -> a.check(definitions, def));
 			if (okay) {
-				methods.add(element);
-				Definition def = new Definition(element);
 				definitions.add(def);
 				def.getConditions().stream()
 						.map(c -> c.getType())

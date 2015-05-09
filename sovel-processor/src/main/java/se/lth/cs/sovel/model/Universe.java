@@ -1,10 +1,11 @@
 package se.lth.cs.sovel.model;
 
+import static java.util.stream.Collectors.toList;
+
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
-import static java.util.stream.Collectors.toList;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;

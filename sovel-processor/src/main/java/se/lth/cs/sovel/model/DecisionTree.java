@@ -1,12 +1,6 @@
 package se.lth.cs.sovel.model;
 
-import java.io.PrintWriter;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
 
 public class DecisionTree {
 	private final Node root;
@@ -21,29 +15,22 @@ public class DecisionTree {
 
 	@Override
 	public String toString() {
-		return "DecisionTree("+root+")";
+		return "DecisionTree(" + root + ")";
 	}
-
 
 	public static abstract class Node {
 		private Node() {
 		}
 
-		public abstract <R, P> R accept(NodeVisitor<R, P> visitor, P parameter);
-		
-		public abstract void generateCode(PrintWriter writer, String module, int indent);
+		public abstract void accept(NodeVisitor visitor);
 	}
 
-	private static String indent(int size) {
-		return Stream.generate(() -> "\t").limit(size).collect(Collectors.joining());
-	}
-	
-	public static interface NodeVisitor<R, P> {
-		public R visitDecision(DecisionNode node, P parameter);
+	public static interface NodeVisitor {
+		public void visitDecision(DecisionNode node);
 
-		public R visitAmbiguity(AmbiguityNode node, P parameter);
+		public void visitAmbiguity(AmbiguityNode node);
 
-		public R visitCondition(ConditionNode node, P parameter);
+		public void visitCondition(ConditionNode node);
 	}
 
 	public static final class DecisionNode extends Node {
@@ -57,31 +44,13 @@ public class DecisionTree {
 			return definition;
 		}
 
-		public <R, P> R accept(NodeVisitor<R, P> visitor, P parameter) {
-			return visitor.visitDecision(this, parameter);
+		public void accept(NodeVisitor visitor) {
+			visitor.visitDecision(this);
 		}
 
 		@Override
 		public String toString() {
-			return "DecisionNode("+definition+")";
-		}
-		
-		public void generateCode(PrintWriter writer, String module, int indent) {
-			String call = module + ".super." + definition.getMethodName() + "(";
-			int i = 0;
-			for (TypeMirror par : definition.getParamTypes()) {
-				if (i > 0) {
-					call += ", ";
-				}
-				call += "(" + par.toString() + ") p" + i++;
-			}
-			call += ")";
-			if (definition.getReturnType().getKind() != TypeKind.VOID) {
-				writer.println(indent(indent) + "return " + call + ";");				
-			} else {
-				writer.println(indent(indent) + call + ";");
-				writer.println(indent(indent) + "return;");
-			}
+			return "DecisionNode(" + definition + ")";
 		}
 	}
 
@@ -96,17 +65,13 @@ public class DecisionTree {
 			return definitions;
 		}
 
-		public <R, P> R accept(NodeVisitor<R, P> visitor, P parameter) {
-			return visitor.visitAmbiguity(this, parameter);
+		public void accept(NodeVisitor visitor) {
+			visitor.visitAmbiguity(this);
 		}
 
 		@Override
 		public String toString() {
-			return "AmbiguityNode("+definitions+")";
-		}
-		
-		public void generateCode(PrintWriter writer, String module, int indent) {
-			writer.println(indent(indent) + "throw new se.lth.cs.sovel.AmbiguityException();");
+			return "AmbiguityNode(" + definitions + ")";
 		}
 
 	}
@@ -134,22 +99,13 @@ public class DecisionTree {
 			return isFalse;
 		}
 
-		public <R, P> R accept(NodeVisitor<R, P> visitor, P parameter) {
-			return visitor.visitCondition(this, parameter);
+		public void accept(NodeVisitor visitor) {
+			visitor.visitCondition(this);
 		}
 
 		@Override
 		public String toString() {
-			return "ConditionNode("+condition+", "+isTrue+", "+isFalse+")";
+			return "ConditionNode(" + condition + ", " + isTrue + ", " + isFalse + ")";
 		}
-		
-		public void generateCode(PrintWriter writer, String module, int indent) {
-			writer.println(indent(indent) + "if (p" + condition.getArgument() + " instanceof " + condition.getType() + ") {");
-			isTrue.generateCode(writer, module, indent+1);
-			writer.println(indent(indent) + "} else {");
-			isFalse.generateCode(writer, module, indent+1);
-			writer.println(indent(indent) + "}");
-		}
-
 	}
 }

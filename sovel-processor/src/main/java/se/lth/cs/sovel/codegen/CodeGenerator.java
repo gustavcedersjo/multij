@@ -21,7 +21,6 @@ import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 
-import se.lth.cs.sovel.Method;
 import se.lth.cs.sovel.model.DecisionTree;
 import se.lth.cs.sovel.model.DecisionTree.AmbiguityNode;
 import se.lth.cs.sovel.model.DecisionTree.ConditionNode;
@@ -32,15 +31,15 @@ import se.lth.cs.sovel.model.DecisionTreeGenerator;
 
 public class CodeGenerator {
 	private final ProcessingEnvironment processingEnv;
-	
+
 	public CodeGenerator(ProcessingEnvironment processingEnv) {
 		this.processingEnv = processingEnv;
 	}
-	
+
 	private Types typeUtil() {
 		return processingEnv.getTypeUtils();
 	}
-	
+
 	public void generateSource(TypeElement e) {
 		try {
 			Name interfaceName = e.getSimpleName();
@@ -48,11 +47,11 @@ public class CodeGenerator {
 			JavaFileObject file = processingEnv.getFiler().createSourceFile(className, e);
 			PrintWriter writer = new PrintWriter(file.openWriter());
 
-			List<ExecutableElement> methods = methodsIn(
-					processingEnv.getElementUtils().getAllMembers((TypeElement) e));
+			List<ExecutableElement> methods = methodsIn(processingEnv.getElementUtils().getAllMembers((TypeElement) e));
 
 			Set<Name> names = methods.stream()
-					.filter(d -> d.getAnnotation(Method.class) != null)
+					.filter(d -> !"java.lang.Object".equals(((TypeElement) d.getEnclosingElement()).getQualifiedName()
+							.toString()))
 					.map(d -> d.getSimpleName())
 					.collect(Collectors.toSet());
 
@@ -60,8 +59,8 @@ public class CodeGenerator {
 					.filter(m -> names.contains(m.getSimpleName()))
 					.collect(Collectors.toList());
 
-			Map<Name, List<ExecutableElement>> groups = defs.stream()
-					.collect(Collectors.groupingBy(m -> m.getSimpleName()));
+			Map<Name, List<ExecutableElement>> groups = defs.stream().collect(
+					Collectors.groupingBy(m -> m.getSimpleName()));
 
 			Map<Name, DecisionTreeGenerator> builders = new HashMap<>();
 			for (Name name : groups.keySet()) {
@@ -90,20 +89,20 @@ public class CodeGenerator {
 	}
 
 	private class MethodCodeGenerator implements NodeVisitor {
-		
+
 		private int indentation = 2;
 		private final Name moduleName;
 		private final PrintWriter writer;
 		private final DecisionTree tree;
 		private final ExecutableElement entryPoint;
-		
+
 		public MethodCodeGenerator(Name moduleName, PrintWriter writer, DecisionTree tree, ExecutableElement entryPoint) {
 			this.moduleName = moduleName;
 			this.writer = writer;
 			this.tree = tree;
 			this.entryPoint = entryPoint;
 		}
-		
+
 		public void generateCode() {
 			writer.println("\t/* " + tree + " */");
 			writer.format("\tpublic %s %s(", entryPoint.getReturnType(), entryPoint.getSimpleName());
@@ -121,18 +120,18 @@ public class CodeGenerator {
 			writer.println("\t}\n");
 
 		}
-		
+
 		private void generateForNode(Node node) {
 			node.accept(this);
 		}
-		
+
 		private void println(String s) {
 			for (int i = 0; i < indentation; i++) {
 				writer.append('\t');
 			}
 			writer.println(s);
 		}
-		
+
 		@Override
 		public void visitDecision(DecisionNode node) {
 			String call = moduleName + ".super." + node.getDefinition().getMethodName() + "(";
@@ -148,7 +147,7 @@ public class CodeGenerator {
 			}
 			call += ")";
 			if (node.getDefinition().getReturnType().getKind() != TypeKind.VOID) {
-				println("return " + call + ";");				
+				println("return " + call + ";");
 			} else {
 				println(call + ";");
 				println("return;");
@@ -162,7 +161,8 @@ public class CodeGenerator {
 
 		@Override
 		public void visitCondition(ConditionNode node) {
-			println("if (p" + node.getCondition().getArgument() + " instanceof " + node.getCondition().getType() + ") {");
+			println("if (p" + node.getCondition().getArgument() + " instanceof " + node.getCondition().getType()
+					+ ") {");
 			indentation++;
 			generateForNode(node.getIsTrue());
 			indentation--;

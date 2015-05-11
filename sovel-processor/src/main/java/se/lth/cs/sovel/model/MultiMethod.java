@@ -15,9 +15,6 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 
-import se.lth.cs.sovel.model.EntryPoint.AmbiguityNode;
-import se.lth.cs.sovel.model.EntryPoint.ConditionNode;
-import se.lth.cs.sovel.model.EntryPoint.DecisionNode;
 import se.lth.cs.sovel.model.analysis.Analysis;
 import se.lth.cs.sovel.model.analysis.DispatchOnGenerics;
 import se.lth.cs.sovel.model.analysis.MatchingPrimitiveTypes;
@@ -126,18 +123,18 @@ public class MultiMethod {
 		return result;
 	}
 
-	private EntryPoint.Node buildNode(Map<Condition, Boolean> knowledge) {
+	private DecisionTree buildNode(Map<Condition, Boolean> knowledge) {
 		List<ExecutableElement> unknown = unknown(knowledge);
 		if (unknown.isEmpty()) {
 			List<ExecutableElement> selectable = selectable(knowledge);
 			if (selectable.size() == 1) {
-				return new DecisionNode(selectable.get(0));
+				return new DecisionTree.DecisionNode(selectable.get(0));
 			} else {
 				List<ExecutableElement> mostSpecific = selectMostSpecific(selectable);
 				if (mostSpecific.size() == 1) {
-					return new DecisionNode(mostSpecific.get(0));
+					return new DecisionTree.DecisionNode(mostSpecific.get(0));
 				} else {
-					return new AmbiguityNode(selectable);
+					return new DecisionTree.AmbiguityNode(selectable);
 				}
 			}
 		} else {
@@ -147,7 +144,7 @@ public class MultiMethod {
 					.sorted(conditionComparator)
 					.findFirst();
 			if (test.isPresent()) {
-				return new ConditionNode(
+				return new DecisionTree.ConditionNode(
 						test.get(),
 						buildNode(addKnowledge(knowledge, test.get(), true)),
 						buildNode(addKnowledge(knowledge, test.get(), false)));

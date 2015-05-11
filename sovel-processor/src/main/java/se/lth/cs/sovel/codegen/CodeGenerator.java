@@ -23,12 +23,8 @@ import javax.tools.JavaFileObject;
 
 import se.lth.cs.sovel.AmbiguityException;
 import se.lth.cs.sovel.MissingDefinitionException;
+import se.lth.cs.sovel.model.DecisionTree;
 import se.lth.cs.sovel.model.EntryPoint;
-import se.lth.cs.sovel.model.EntryPoint.AmbiguityNode;
-import se.lth.cs.sovel.model.EntryPoint.ConditionNode;
-import se.lth.cs.sovel.model.EntryPoint.DecisionNode;
-import se.lth.cs.sovel.model.EntryPoint.Node;
-import se.lth.cs.sovel.model.EntryPoint.NodeVisitor;
 import se.lth.cs.sovel.model.MultiMethod;
 
 public class CodeGenerator {
@@ -83,7 +79,7 @@ public class CodeGenerator {
 			defs.forEach(def -> {
 				MultiMethod builder = builders.get(def.getSimpleName());
 				EntryPoint tree = builder.getEntryPoint(def);
-				MethodCodeGenerator gen = new MethodCodeGenerator(e.getQualifiedName(), writer, tree, def);
+				MethodCodeGenerator gen = new MethodCodeGenerator(e.getQualifiedName(), writer, tree);
 				gen.generateCode();
 			});
 
@@ -94,7 +90,7 @@ public class CodeGenerator {
 		}
 	}
 
-	private class MethodCodeGenerator implements NodeVisitor {
+	private class MethodCodeGenerator implements DecisionTree.Visitor {
 
 		private int indentation = 2;
 		private final Name moduleName;
@@ -102,11 +98,11 @@ public class CodeGenerator {
 		private final EntryPoint tree;
 		private final ExecutableElement entryPoint;
 
-		public MethodCodeGenerator(Name moduleName, PrintWriter writer, EntryPoint tree, ExecutableElement entryPoint) {
+		public MethodCodeGenerator(Name moduleName, PrintWriter writer, EntryPoint tree) {
 			this.moduleName = moduleName;
 			this.writer = writer;
 			this.tree = tree;
-			this.entryPoint = entryPoint;
+			this.entryPoint = tree.getEntryPoint();
 		}
 
 		public void generateCode() {
@@ -136,8 +132,8 @@ public class CodeGenerator {
 
 		}
 
-		private void generateForNode(Node node) {
-			node.accept(this);
+		private void generateForNode(DecisionTree decisionTree) {
+			decisionTree.accept(this);
 		}
 
 		private void println(String s) {
@@ -148,7 +144,7 @@ public class CodeGenerator {
 		}
 
 		@Override
-		public void visitDecision(DecisionNode node) {
+		public void visitDecision(DecisionTree.DecisionNode node) {
 			if (node.getDefinition().isDefault()) {
 				String call = moduleName + ".super." + node.getDefinition().getSimpleName() + "(";
 				int i = 0;
@@ -175,12 +171,12 @@ public class CodeGenerator {
 		}
 
 		@Override
-		public void visitAmbiguity(AmbiguityNode node) {
+		public void visitAmbiguity(DecisionTree.AmbiguityNode node) {
 			println("throw new " + AmbiguityException.class.getCanonicalName() + "();");
 		}
 
 		@Override
-		public void visitCondition(ConditionNode node) {
+		public void visitCondition(DecisionTree.ConditionNode node) {
 			println("if (p" + node.getCondition().getArgument() + " instanceof "
 					+ processingEnv.getTypeUtils().erasure(node.getCondition().getType()) + ") {");
 			indentation++;

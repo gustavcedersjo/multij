@@ -1,18 +1,14 @@
 package se.lth.cs.sovel.model;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 
 import se.lth.cs.sovel.model.analysis.Analysis;
@@ -84,13 +80,11 @@ public class MultiMethod {
 	}
 	
 	public EntryPoint getEntryPoint(ExecutableElement entry) {
-		Map<Condition, Boolean> knowledge = Collections.emptyMap();
-		if (entry != null) {
-			for (Condition cond : getConditions(entry)) {
-				knowledge = addKnowledge(knowledge, cond, true);
-			}
+		Knowledge.Builder builder = Knowledge.builder(universe);
+		for (Condition cond : getConditions(entry)) {
+			builder.add(cond, true);
 		}
-		return new EntryPoint(entry, buildNode(knowledge));
+		return new EntryPoint(entry, buildNode(builder.build()));
 	}
 	
 	public static List<Condition> getConditions(ExecutableElement def) {
@@ -102,28 +96,7 @@ public class MultiMethod {
 		return result;
 	}
 
-	private Map<Condition, Boolean> addKnowledge(Map<Condition, Boolean> knowledge, Condition cond, boolean truth) {
-		Map<Condition, Boolean> result = new HashMap<>(knowledge);
-		result.put(cond, truth);
-		if (truth) {
-			for (TypeMirror t : universe.ifThen(cond.getType())) {
-				Condition c = new Condition(cond.getArgument(), t);
-				result.put(c, true);
-			}
-			for (TypeMirror t : universe.ifThenNot(cond.getType())) {
-				Condition c = new Condition(cond.getArgument(), t);
-				result.put(c, false);
-			}
-		} else {
-			for (TypeMirror t : universe.ifNotThenNot(cond.getType())) {
-				Condition c = new Condition(cond.getArgument(), t);
-				result.put(c, false);
-			}
-		}
-		return result;
-	}
-
-	private DecisionTree buildNode(Map<Condition, Boolean> knowledge) {
+	private DecisionTree buildNode(Knowledge knowledge) {
 		List<ExecutableElement> unknown = unknown(knowledge);
 		if (unknown.isEmpty()) {
 			List<ExecutableElement> selectable = selectable(knowledge);
@@ -140,14 +113,14 @@ public class MultiMethod {
 		} else {
 			Optional<Condition> test = unknown.stream()
 					.flatMap(def -> getConditions(def).stream()
-							.filter(cond -> !knowledge.containsKey(cond)))
+							.filter(cond -> !knowledge.isKnown(cond)))
 					.sorted(conditionComparator)
 					.findFirst();
 			if (test.isPresent()) {
 				return new DecisionTree.ConditionNode(
 						test.get(),
-						buildNode(addKnowledge(knowledge, test.get(), true)),
-						buildNode(addKnowledge(knowledge, test.get(), false)));
+						buildNode(knowledge.copy().add(test.get(), true).build()),
+						buildNode(knowledge.copy().add(test.get(), false).build()));
 			} else {
 				return null;
 			}
@@ -173,27 +146,27 @@ public class MultiMethod {
 		return mostSpecific;
 	}
 
-	private List<ExecutableElement> unknown(Map<Condition, Boolean> knowledge) {
+	private List<ExecutableElement> unknown(Knowledge knowledge) {
 		return definitions.stream()
 				.filter(def -> isUnknown(def, knowledge))
 				.collect(Collectors.toList());
 	}
 	
-	private boolean isUnknown(ExecutableElement def, Map<Condition, Boolean> knowledge) {
+	private boolean isUnknown(ExecutableElement def, Knowledge knowledge) {
 		return getConditions(def).stream()
-				.anyMatch(cond -> !knowledge.containsKey(cond));
+				.anyMatch(cond -> !knowledge.isKnown(cond));
 	}
 
 
-	private List<ExecutableElement> selectable(Map<Condition, Boolean> knowledge) {
+	private List<ExecutableElement> selectable(Knowledge knowledge) {
 		return definitions.stream()
 				.filter(def -> isSelectable(def, knowledge))
 				.collect(Collectors.toList());
 	}
 	
-	private boolean isSelectable(ExecutableElement def, Map<Condition, Boolean> knowledge) {
+	private boolean isSelectable(ExecutableElement def, Knowledge knowledge) {
 		return getConditions(def).stream()
-				.allMatch(cond -> knowledge.getOrDefault(cond, false));
+				.allMatch(cond -> knowledge.isTrue(cond));
 
 	}
 }

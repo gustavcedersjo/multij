@@ -61,18 +61,17 @@ public class DecisionTreeGenerator {
 
 		public void add(ExecutableElement element) {
 			Definition def = new Definition(element);
-			boolean okay = analyses.stream()
-					.allMatch(a -> a.check(definitions, def));
-			if (okay) {
-				definitions.add(def);
-				def.getConditions().stream()
-						.map(c -> c.getType())
-						.forEach(universe);
-			}
+			definitions.add(def);
+			def.getConditions().stream()
+					.forEach(c -> universe.add(c.getType()));
 		}
 
 		public DecisionTreeGenerator build() {
-			return new DecisionTreeGenerator(definitions, universe.build(), util);
+			if (analyses.stream().allMatch(a -> a.check(definitions))) {
+				return new DecisionTreeGenerator(definitions, universe.build(), util);
+			} else {
+				return null;
+			}
 		}
 
 	}

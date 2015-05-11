@@ -23,12 +23,17 @@ public class ObjectMethodNames implements Analysis {
 	}
 	
 	@Override
-	public boolean check(List<Definition> current, Definition added) {
-		if (forbidden.contains(added.getMethodName().toString())) {
-			processingEnv.getMessager().printMessage(Kind.ERROR, "Can not create multimethods with the methods in java.lang.Object.", added.getMethod());
-			return false;
-		} else {
+	public boolean check(List<Definition> definitions) {
+		if (definitions.isEmpty()) {
 			return true;
+		} else {
+			Definition def = definitions.get(0);
+			if (forbidden.contains(def.getMethodName().toString())) {
+				processingEnv.getMessager().printMessage(Kind.ERROR, "Can not create multimethods with the methods in java.lang.Object.", def.getMethod());
+				return false;
+			} else {
+				return true;
+			}
 		}
 	}
 

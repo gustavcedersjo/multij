@@ -98,4 +98,8 @@ public class Definition {
 	public String toString() {
 		return method.toString();
 	}
+
+	public boolean isImplemented() {
+		return method.isDefault();
+	}
 }

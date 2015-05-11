@@ -21,6 +21,8 @@ import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 
+import se.lth.cs.sovel.AmbiguityException;
+import se.lth.cs.sovel.MissingDefinitionException;
 import se.lth.cs.sovel.model.DecisionTree;
 import se.lth.cs.sovel.model.DecisionTree.AmbiguityNode;
 import se.lth.cs.sovel.model.DecisionTree.ConditionNode;
@@ -134,29 +136,33 @@ public class CodeGenerator {
 
 		@Override
 		public void visitDecision(DecisionNode node) {
-			String call = moduleName + ".super." + node.getDefinition().getMethodName() + "(";
-			int i = 0;
-			for (TypeMirror par : node.getDefinition().getParamTypes()) {
-				if (i > 0) {
-					call += ", ";
+			if (node.getDefinition().isImplemented()) {
+				String call = moduleName + ".super." + node.getDefinition().getMethodName() + "(";
+				int i = 0;
+				for (TypeMirror par : node.getDefinition().getParamTypes()) {
+					if (i > 0) {
+						call += ", ";
+					}
+					if (!typeUtil().isSameType(par, entryPoint.getParameters().get(i).asType())) {
+						call += "(" + par.toString() + ") ";
+					}
+					call += "p" + i++;
 				}
-				if (!typeUtil().isSameType(par, entryPoint.getParameters().get(i).asType())) {
-					call += "(" + par.toString() + ") ";
+				call += ")";
+				if (node.getDefinition().getReturnType().getKind() != TypeKind.VOID) {
+					println("return " + call + ";");
+				} else {
+					println(call + ";");
+					println("return;");
 				}
-				call += "p" + i++;
-			}
-			call += ")";
-			if (node.getDefinition().getReturnType().getKind() != TypeKind.VOID) {
-				println("return " + call + ";");
 			} else {
-				println(call + ";");
-				println("return;");
+				println("throw new " + MissingDefinitionException.class.getCanonicalName() + "();");
 			}
 		}
 
 		@Override
 		public void visitAmbiguity(AmbiguityNode node) {
-			println("throw new se.lth.cs.sovel.AmbiguityException();");
+			println("throw new " + AmbiguityException.class.getCanonicalName() + "();");
 		}
 
 		@Override

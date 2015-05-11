@@ -22,5 +22,5 @@ public interface ExampleA {
 	}
 	public default void ambiguous(Closeable c) {
 	}
-
+	
 }

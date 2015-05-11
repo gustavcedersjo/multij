@@ -20,6 +20,7 @@ import se.lth.cs.sovel.model.DecisionTree.DecisionNode;
 import se.lth.cs.sovel.model.analysis.Analysis;
 import se.lth.cs.sovel.model.analysis.MatchingPrimitiveTypes;
 import se.lth.cs.sovel.model.analysis.MethodArity;
+import se.lth.cs.sovel.model.analysis.ObjectMethodNames;
 
 public class DecisionTreeGenerator {
 	private final List<Definition> definitions;
@@ -41,6 +42,7 @@ public class DecisionTreeGenerator {
 		List<Analysis> analyses = new ArrayList<>();
 		analyses.add(new MethodArity(procEnv));
 		analyses.add(new MatchingPrimitiveTypes(procEnv));
+		analyses.add(new ObjectMethodNames(procEnv));
 		return new Builder(analyses, procEnv.getTypeUtils());
 	}
 

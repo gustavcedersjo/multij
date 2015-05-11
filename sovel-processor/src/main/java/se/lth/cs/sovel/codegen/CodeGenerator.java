@@ -43,35 +43,39 @@ public class CodeGenerator {
 	}
 
 	public void generateSource(TypeElement e) {
+		List<ExecutableElement> methods = methodsIn(processingEnv.getElementUtils().getAllMembers((TypeElement) e));
+
+		Set<Name> names = methods.stream()
+				.filter(d -> !"java.lang.Object".equals(((TypeElement) d.getEnclosingElement()).getQualifiedName()
+						.toString()))
+				.map(d -> d.getSimpleName())
+				.collect(Collectors.toSet());
+
+		List<ExecutableElement> defs = methods.stream()
+				.filter(m -> names.contains(m.getSimpleName()))
+				.collect(Collectors.toList());
+
+		Map<Name, List<ExecutableElement>> groups = defs.stream()
+				.collect(Collectors.groupingBy(m -> m.getSimpleName()));
+
+		Map<Name, DecisionTreeGenerator> builders = new HashMap<>();
+
+		for (Name name : groups.keySet()) {
+			DecisionTreeGenerator.Builder builder = DecisionTreeGenerator.builder(processingEnv);
+			for (ExecutableElement def : groups.get(name)) {
+				builder.add(def);
+			}
+			DecisionTreeGenerator generator = builder.build();
+			if (generator == null) {
+				return;
+			}
+			builders.put(name, generator);
+		}
+
 		try {
-			Name interfaceName = e.getSimpleName();
-			String className = interfaceName + "Sovel";
+			String className = e.getSimpleName() + "Sovel";
 			JavaFileObject file = processingEnv.getFiler().createSourceFile(className, e);
 			PrintWriter writer = new PrintWriter(file.openWriter());
-
-			List<ExecutableElement> methods = methodsIn(processingEnv.getElementUtils().getAllMembers((TypeElement) e));
-
-			Set<Name> names = methods.stream()
-					.filter(d -> !"java.lang.Object".equals(((TypeElement) d.getEnclosingElement()).getQualifiedName()
-							.toString()))
-					.map(d -> d.getSimpleName())
-					.collect(Collectors.toSet());
-
-			List<ExecutableElement> defs = methods.stream()
-					.filter(m -> names.contains(m.getSimpleName()))
-					.collect(Collectors.toList());
-
-			Map<Name, List<ExecutableElement>> groups = defs.stream().collect(
-					Collectors.groupingBy(m -> m.getSimpleName()));
-
-			Map<Name, DecisionTreeGenerator> builders = new HashMap<>();
-			for (Name name : groups.keySet()) {
-				DecisionTreeGenerator.Builder builder = DecisionTreeGenerator.builder(processingEnv);
-				for (ExecutableElement def : groups.get(name)) {
-					builder.add(def);
-				}
-				builders.put(name, builder.build());
-			}
 
 			writer.format("package %s;\n", processingEnv.getElementUtils().getPackageOf(e).getQualifiedName());
 			writer.format("public final class %s implements %s {\n", className, e.getQualifiedName());
@@ -107,7 +111,16 @@ public class CodeGenerator {
 
 		public void generateCode() {
 			writer.println("\t/* " + tree + " */");
-			writer.format("\tpublic %s %s(", entryPoint.getReturnType(), entryPoint.getSimpleName());
+			String typeParDecl;
+			if (entryPoint.getTypeParameters().isEmpty()) {
+				typeParDecl = "";
+			} else {
+				typeParDecl = entryPoint.getTypeParameters()
+						.stream()
+						.map(t -> t.toString())
+						.collect(Collectors.joining(", ", "<", "> "));
+			}
+			writer.format("\tpublic %s%s %s(", typeParDecl, entryPoint.getReturnType(), entryPoint.getSimpleName());
 			int i = 0;
 			for (VariableElement var : entryPoint.getParameters()) {
 				if (i > 0) {
@@ -167,8 +180,8 @@ public class CodeGenerator {
 
 		@Override
 		public void visitCondition(ConditionNode node) {
-			println("if (p" + node.getCondition().getArgument() + " instanceof " + node.getCondition().getType()
-					+ ") {");
+			println("if (p" + node.getCondition().getArgument() + " instanceof "
+					+ processingEnv.getTypeUtils().erasure(node.getCondition().getType()) + ") {");
 			indentation++;
 			generateForNode(node.getIsTrue());
 			indentation--;

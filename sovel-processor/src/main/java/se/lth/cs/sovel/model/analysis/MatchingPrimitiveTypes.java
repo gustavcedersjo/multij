@@ -34,7 +34,9 @@ public class MatchingPrimitiveTypes implements CheckOneAnalysis {
 		List<? extends VariableElement> curPar = current.getMethod().getParameters();
 		List<? extends VariableElement> addPar = added.getMethod().getParameters();
 
-		assert curPar.size() == addPar.size();
+		if (curPar.size() != addPar.size()) {
+			return false;
+		}
 		boolean result = true;
 
 		for (int i = 0; i < curPar.size(); i++) {

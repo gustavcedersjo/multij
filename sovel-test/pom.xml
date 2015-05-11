@@ -20,6 +20,12 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>com.google.testing.compile</groupId>
+			<artifactId>compile-testing</artifactId>
+			<version>0.6</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>se.lth.cs.sovel</groupId>
 			<artifactId>sovel-processor</artifactId>
 			<version>${project.version}</version>

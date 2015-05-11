@@ -22,6 +22,7 @@ import se.lth.cs.sovel.model.analysis.DispatchOnGenerics;
 import se.lth.cs.sovel.model.analysis.MatchingPrimitiveTypes;
 import se.lth.cs.sovel.model.analysis.MethodArity;
 import se.lth.cs.sovel.model.analysis.ObjectMethodNames;
+import se.lth.cs.sovel.model.analysis.ReturnTypeAnalysis;
 
 public class DecisionTreeGenerator {
 	private final List<Definition> definitions;
@@ -43,6 +44,7 @@ public class DecisionTreeGenerator {
 		List<Analysis> analyses = new ArrayList<>();
 		analyses.add(new MethodArity(procEnv));
 		analyses.add(new MatchingPrimitiveTypes(procEnv));
+		analyses.add(new ReturnTypeAnalysis(procEnv));
 		analyses.add(new ObjectMethodNames(procEnv));
 		analyses.add(new DispatchOnGenerics(procEnv));
 		return new Builder(analyses, procEnv.getTypeUtils());
@@ -69,7 +71,13 @@ public class DecisionTreeGenerator {
 		}
 
 		public DecisionTreeGenerator build() {
-			if (analyses.stream().allMatch(a -> a.check(definitions))) {
+			boolean okay = true;
+			for (Analysis analysis : analyses) {
+				if (!analysis.check(definitions)) {
+					okay = false;
+				}
+			}
+			if (okay) {
 				return new DecisionTreeGenerator(definitions, universe.build(), util);
 			} else {
 				return null;

@@ -19,7 +19,7 @@ public class ReturnTypeAnalysis implements CheckOneAnalysis {
 	@Override
 	public boolean checkOne(Definition current, Definition added) {
 		if (!util.isSameType(current.getReturnType(), added.getReturnType())) {
-			messager.printMessage(Diagnostic.Kind.ERROR, "Method is defined with other returntype elsewhere", added.getMethod());
+			messager.printMessage(Diagnostic.Kind.ERROR, "Method is defined with other return type elsewhere", added.getMethod());
 			return false;
 		} else {
 			return true;

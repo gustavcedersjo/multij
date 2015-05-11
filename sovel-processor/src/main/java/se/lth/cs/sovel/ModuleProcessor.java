@@ -10,6 +10,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
+import javax.tools.Diagnostic.Kind;
 
 import se.lth.cs.sovel.codegen.CodeGenerator;
 
@@ -29,9 +30,11 @@ public class ModuleProcessor extends AbstractProcessor {
 		for (Element e : roundEnv.getElementsAnnotatedWith(Module.class)) {
 			if (e.getKind() == ElementKind.INTERFACE) {
 				generateSource((TypeElement) e);
+			} else {
+				processingEnv.getMessager().printMessage(Kind.ERROR, "Can only create modules from interfaces.", e);
 			}
 		}
-		return true;
+		return false;
 	}
 
 	private void generateSource(TypeElement e) {

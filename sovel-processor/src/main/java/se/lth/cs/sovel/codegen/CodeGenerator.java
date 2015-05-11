@@ -74,12 +74,12 @@ public class CodeGenerator {
 			}
 
 			writer.format("package %s;\n", processingEnv.getElementUtils().getPackageOf(e).getQualifiedName());
-			writer.format("public final class %s implements %s {\n", className, interfaceName);
+			writer.format("public final class %s implements %s {\n", className, e.getQualifiedName());
 
 			defs.forEach(def -> {
 				DecisionTreeGenerator builder = builders.get(def.getSimpleName());
 				DecisionTree tree = builder.build(def);
-				MethodCodeGenerator gen = new MethodCodeGenerator(interfaceName, writer, tree, def);
+				MethodCodeGenerator gen = new MethodCodeGenerator(e.getQualifiedName(), writer, tree, def);
 				gen.generateCode();
 			});
 

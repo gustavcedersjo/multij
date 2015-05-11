@@ -10,6 +10,7 @@
 		<module>sovel-core</module>
 		<module>sovel-processor</module>
 		<module>sovel-example</module>
+		<module>sovel-test</module>
   </modules>
 	<build>
 		<plugins>

@@ -2,20 +2,24 @@ package se.lth.cs.sovel.model;
 
 import java.util.List;
 
-public class DecisionTree {
+import javax.lang.model.element.ExecutableElement;
+
+public class EntryPoint {
+	private final ExecutableElement entryPoint;
 	private final Node root;
 
-	public DecisionTree(Node root) {
+	public EntryPoint(ExecutableElement entryPoint, Node root) {
+		this.entryPoint = entryPoint;
 		this.root = root;
 	}
 
-	public Node getRoot() {
+	public Node getDecisionTree() {
 		return root;
 	}
 
 	@Override
 	public String toString() {
-		return "DecisionTree(" + root + ")";
+		return "EntryPoint(" + root + ")";
 	}
 
 	public static abstract class Node {
@@ -34,13 +38,13 @@ public class DecisionTree {
 	}
 
 	public static final class DecisionNode extends Node {
-		private final Definition definition;
+		private final ExecutableElement definition;
 
-		public DecisionNode(Definition definition) {
+		public DecisionNode(ExecutableElement definition) {
 			this.definition = definition;
 		}
 
-		public Definition getDefinition() {
+		public ExecutableElement getDefinition() {
 			return definition;
 		}
 
@@ -55,13 +59,13 @@ public class DecisionTree {
 	}
 
 	public static final class AmbiguityNode extends Node {
-		private final List<Definition> definitions;
+		private final List<ExecutableElement> definitions;
 
-		public AmbiguityNode(List<Definition> definitions) {
+		public AmbiguityNode(List<ExecutableElement> definitions) {
 			this.definitions = definitions;
 		}
 
-		public List<Definition> getDefinitions() {
+		public List<ExecutableElement> getDefinitions() {
 			return definitions;
 		}
 

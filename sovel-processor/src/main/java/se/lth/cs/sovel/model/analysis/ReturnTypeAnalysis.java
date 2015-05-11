@@ -2,10 +2,9 @@ package se.lth.cs.sovel.model.analysis;
 
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
-
-import se.lth.cs.sovel.model.Definition;
 
 public class ReturnTypeAnalysis implements CheckOneAnalysis {
 	private final Types util;
@@ -17,9 +16,9 @@ public class ReturnTypeAnalysis implements CheckOneAnalysis {
 	}
 
 	@Override
-	public boolean checkOne(Definition current, Definition added) {
+	public boolean checkOne(ExecutableElement current, ExecutableElement added) {
 		if (!util.isSameType(current.getReturnType(), added.getReturnType())) {
-			messager.printMessage(Diagnostic.Kind.ERROR, "Method is defined with other return type elsewhere", added.getMethod());
+			messager.printMessage(Diagnostic.Kind.ERROR, "Method is defined with other return type elsewhere", added);
 			return false;
 		} else {
 			return true;

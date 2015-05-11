@@ -11,12 +11,13 @@ import java.util.stream.Collectors;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 
-import se.lth.cs.sovel.model.DecisionTree.AmbiguityNode;
-import se.lth.cs.sovel.model.DecisionTree.ConditionNode;
-import se.lth.cs.sovel.model.DecisionTree.DecisionNode;
+import se.lth.cs.sovel.model.EntryPoint.AmbiguityNode;
+import se.lth.cs.sovel.model.EntryPoint.ConditionNode;
+import se.lth.cs.sovel.model.EntryPoint.DecisionNode;
 import se.lth.cs.sovel.model.analysis.Analysis;
 import se.lth.cs.sovel.model.analysis.DispatchOnGenerics;
 import se.lth.cs.sovel.model.analysis.MatchingPrimitiveTypes;
@@ -24,13 +25,13 @@ import se.lth.cs.sovel.model.analysis.MethodArity;
 import se.lth.cs.sovel.model.analysis.ObjectMethodNames;
 import se.lth.cs.sovel.model.analysis.ReturnTypeAnalysis;
 
-public class DecisionTreeGenerator {
-	private final List<Definition> definitions;
+public class MultiMethod {
+	private final List<ExecutableElement> definitions;
 	private final Universe universe;
 	private final Comparator<Condition> conditionComparator;
 	private final Types util;
 
-	private DecisionTreeGenerator(List<Definition> definitions, Universe universe, Types util) {
+	private MultiMethod(List<ExecutableElement> definitions, Universe universe, Types util) {
 		SubtypeTotalOrder subtypeComp = new SubtypeTotalOrder(util);
 		conditionComparator = Comparator
 				.comparingInt(Condition::getArgument)
@@ -51,7 +52,7 @@ public class DecisionTreeGenerator {
 	}
 
 	public static class Builder {
-		private final List<Definition> definitions;
+		private final List<ExecutableElement> definitions;
 		private final List<Analysis> analyses;
 		private final Types util;
 		private final Universe.Builder universe;
@@ -64,13 +65,12 @@ public class DecisionTreeGenerator {
 		}
 
 		public void add(ExecutableElement element) {
-			Definition def = new Definition(element);
-			definitions.add(def);
-			def.getConditions().stream()
+			definitions.add(element);
+			getConditions(element).stream()
 					.forEach(c -> universe.add(c.getType()));
 		}
 
-		public DecisionTreeGenerator build() {
+		public MultiMethod build() {
 			boolean okay = true;
 			for (Analysis analysis : analyses) {
 				if (!analysis.check(definitions)) {
@@ -78,22 +78,31 @@ public class DecisionTreeGenerator {
 				}
 			}
 			if (okay) {
-				return new DecisionTreeGenerator(definitions, universe.build(), util);
+				return new MultiMethod(definitions, universe.build(), util);
 			} else {
 				return null;
 			}
 		}
 
 	}
-
-	public DecisionTree build(ExecutableElement entry) {
+	
+	public EntryPoint getEntryPoint(ExecutableElement entry) {
 		Map<Condition, Boolean> knowledge = Collections.emptyMap();
 		if (entry != null) {
-			for (Condition cond : new Definition(entry).getConditions()) {
+			for (Condition cond : getConditions(entry)) {
 				knowledge = addKnowledge(knowledge, cond, true);
 			}
 		}
-		return new DecisionTree(buildNode(knowledge));
+		return new EntryPoint(entry, buildNode(knowledge));
+	}
+	
+	public static List<Condition> getConditions(ExecutableElement def) {
+		List<Condition> result = new ArrayList<>(def.getParameters().size());
+		int i = 0;
+		for (VariableElement par : def.getParameters()) {
+			result.add(new Condition(i++, par.asType())); 
+		}
+		return result;
 	}
 
 	private Map<Condition, Boolean> addKnowledge(Map<Condition, Boolean> knowledge, Condition cond, boolean truth) {
@@ -117,14 +126,14 @@ public class DecisionTreeGenerator {
 		return result;
 	}
 
-	private DecisionTree.Node buildNode(Map<Condition, Boolean> knowledge) {
-		List<Definition> unknown = unknown(knowledge);
+	private EntryPoint.Node buildNode(Map<Condition, Boolean> knowledge) {
+		List<ExecutableElement> unknown = unknown(knowledge);
 		if (unknown.isEmpty()) {
-			List<Definition> selectable = selectable(knowledge);
+			List<ExecutableElement> selectable = selectable(knowledge);
 			if (selectable.size() == 1) {
 				return new DecisionNode(selectable.get(0));
 			} else {
-				List<Definition> mostSpecific = selectMostSpecific(selectable);
+				List<ExecutableElement> mostSpecific = selectMostSpecific(selectable);
 				if (mostSpecific.size() == 1) {
 					return new DecisionNode(mostSpecific.get(0));
 				} else {
@@ -133,7 +142,7 @@ public class DecisionTreeGenerator {
 			}
 		} else {
 			Optional<Condition> test = unknown.stream()
-					.flatMap(def -> def.getConditions().stream()
+					.flatMap(def -> getConditions(def).stream()
 							.filter(cond -> !knowledge.containsKey(cond)))
 					.sorted(conditionComparator)
 					.findFirst();
@@ -148,13 +157,13 @@ public class DecisionTreeGenerator {
 		}
 	}
 
-	private List<Definition> selectMostSpecific(List<Definition> definitions) {
-		List<Definition> mostSpecific = new ArrayList<>();
-		for (Definition def : definitions) {
+	private List<ExecutableElement> selectMostSpecific(List<ExecutableElement> definitions) {
+		List<ExecutableElement> mostSpecific = new ArrayList<>();
+		for (ExecutableElement def : definitions) {
 			boolean moreSpecific = true;
-			defs: for (Definition other : definitions) {
-				for (int i = 0; i < def.getParamTypes().size(); i++) {
-					if (!util.isSubtype(def.getParamTypes().get(i), other.getParamTypes().get(i))) {
+			defs: for (ExecutableElement other : definitions) {
+				for (int i = 0; i < def.getParameters().size(); i++) {
+					if (!util.isSubtype(def.getParameters().get(i).asType(), other.getParameters().get(i).asType())) {
 						moreSpecific = false;
 						break defs;
 					}
@@ -167,15 +176,27 @@ public class DecisionTreeGenerator {
 		return mostSpecific;
 	}
 
-	private List<Definition> unknown(Map<Condition, Boolean> knowledge) {
+	private List<ExecutableElement> unknown(Map<Condition, Boolean> knowledge) {
 		return definitions.stream()
-				.filter(def -> def.isUnknown(knowledge))
+				.filter(def -> isUnknown(def, knowledge))
 				.collect(Collectors.toList());
 	}
+	
+	private boolean isUnknown(ExecutableElement def, Map<Condition, Boolean> knowledge) {
+		return getConditions(def).stream()
+				.anyMatch(cond -> !knowledge.containsKey(cond));
+	}
 
-	private List<Definition> selectable(Map<Condition, Boolean> knowledge) {
+
+	private List<ExecutableElement> selectable(Map<Condition, Boolean> knowledge) {
 		return definitions.stream()
-				.filter(def -> def.isSelectable(knowledge))
+				.filter(def -> isSelectable(def, knowledge))
 				.collect(Collectors.toList());
+	}
+	
+	private boolean isSelectable(ExecutableElement def, Map<Condition, Boolean> knowledge) {
+		return getConditions(def).stream()
+				.allMatch(cond -> knowledge.getOrDefault(cond, false));
+
 	}
 }

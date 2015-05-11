@@ -6,12 +6,11 @@ import java.util.Set;
 
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
-
-import se.lth.cs.sovel.model.Definition;
 
 public class MatchingPrimitiveTypes implements CheckOneAnalysis {
 	private final Messager messager;
@@ -30,9 +29,9 @@ public class MatchingPrimitiveTypes implements CheckOneAnalysis {
 			TypeKind.LONG,
 			TypeKind.SHORT);
 
-	public boolean checkOne(Definition current, Definition added) {
-		List<? extends VariableElement> curPar = current.getMethod().getParameters();
-		List<? extends VariableElement> addPar = added.getMethod().getParameters();
+	public boolean checkOne(ExecutableElement current, ExecutableElement added) {
+		List<? extends VariableElement> curPar = current.getParameters();
+		List<? extends VariableElement> addPar = added.getParameters();
 
 		if (curPar.size() != addPar.size()) {
 			return false;

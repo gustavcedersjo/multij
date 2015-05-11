@@ -6,6 +6,7 @@ import java.util.List;
 
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
@@ -13,8 +14,6 @@ import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
-
-import se.lth.cs.sovel.model.Definition;
 
 public class DispatchOnGenerics implements Analysis {
 	private final Types util;
@@ -28,25 +27,25 @@ public class DispatchOnGenerics implements Analysis {
 
 
 	@Override
-	public boolean check(List<Definition> definitions) {
-		Iterator<Definition> iter = definitions.iterator();
+	public boolean check(List<ExecutableElement> definitions) {
+		Iterator<ExecutableElement> iter = definitions.iterator();
 		if (iter.hasNext()) {
-			List<TypeMirror> types = iter.next().getParamTypes();
+			List<? extends VariableElement> types = iter.next().getParameters();
 			boolean[] same = new boolean[types.size()];
 			Arrays.fill(same, true);
 			while (iter.hasNext()) {
-				Definition def = iter.next();
+				ExecutableElement def = iter.next();
 				for (int i = 0; i < same.length; i++) {
-					if (same[i] && !util.isSameType(types.get(i), def.getParamTypes().get(i))) {
+					if (same[i] && !util.isSameType(types.get(i).asType(), def.getParameters().get(i).asType())) {
 						same[i] = false;
 					}
 				}
 			}
 			
 			boolean result = true;
-			for (Definition def : definitions) {
+			for (ExecutableElement def : definitions) {
 				for (int i = 0; i < same.length; i++) {
-					VariableElement par = def.getMethod().getParameters().get(i);
+					VariableElement par = def.getParameters().get(i);
 					if (!same[i] && hasGenerics(par.asType())) {
 						result = false;
 						messager.printMessage(Diagnostic.Kind.ERROR, "Can not do dynamic dispatch on generic type.", par);

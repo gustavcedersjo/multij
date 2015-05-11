@@ -6,9 +6,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.ExecutableElement;
 import javax.tools.Diagnostic.Kind;
-
-import se.lth.cs.sovel.model.Definition;
 
 public class ObjectMethodNames implements Analysis {
 	private static final Set<String> forbidden = Stream
@@ -23,13 +22,13 @@ public class ObjectMethodNames implements Analysis {
 	}
 	
 	@Override
-	public boolean check(List<Definition> definitions) {
+	public boolean check(List<ExecutableElement> definitions) {
 		if (definitions.isEmpty()) {
 			return true;
 		} else {
-			Definition def = definitions.get(0);
-			if (forbidden.contains(def.getMethodName().toString())) {
-				processingEnv.getMessager().printMessage(Kind.ERROR, "Can not create multimethods with the methods in java.lang.Object.", def.getMethod());
+			ExecutableElement def = definitions.get(0);
+			if (forbidden.contains(def.getSimpleName().toString())) {
+				processingEnv.getMessager().printMessage(Kind.ERROR, "Can not create multimethods with the methods in java.lang.Object.", def);
 				return false;
 			} else {
 				return true;

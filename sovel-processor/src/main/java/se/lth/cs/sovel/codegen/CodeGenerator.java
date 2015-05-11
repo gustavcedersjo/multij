@@ -23,13 +23,13 @@ import javax.tools.JavaFileObject;
 
 import se.lth.cs.sovel.AmbiguityException;
 import se.lth.cs.sovel.MissingDefinitionException;
-import se.lth.cs.sovel.model.DecisionTree;
-import se.lth.cs.sovel.model.DecisionTree.AmbiguityNode;
-import se.lth.cs.sovel.model.DecisionTree.ConditionNode;
-import se.lth.cs.sovel.model.DecisionTree.DecisionNode;
-import se.lth.cs.sovel.model.DecisionTree.Node;
-import se.lth.cs.sovel.model.DecisionTree.NodeVisitor;
-import se.lth.cs.sovel.model.DecisionTreeGenerator;
+import se.lth.cs.sovel.model.EntryPoint;
+import se.lth.cs.sovel.model.EntryPoint.AmbiguityNode;
+import se.lth.cs.sovel.model.EntryPoint.ConditionNode;
+import se.lth.cs.sovel.model.EntryPoint.DecisionNode;
+import se.lth.cs.sovel.model.EntryPoint.Node;
+import se.lth.cs.sovel.model.EntryPoint.NodeVisitor;
+import se.lth.cs.sovel.model.MultiMethod;
 
 public class CodeGenerator {
 	private final ProcessingEnvironment processingEnv;
@@ -58,14 +58,14 @@ public class CodeGenerator {
 		Map<Name, List<ExecutableElement>> groups = defs.stream()
 				.collect(Collectors.groupingBy(m -> m.getSimpleName()));
 
-		Map<Name, DecisionTreeGenerator> builders = new HashMap<>();
+		Map<Name, MultiMethod> builders = new HashMap<>();
 
 		for (Name name : groups.keySet()) {
-			DecisionTreeGenerator.Builder builder = DecisionTreeGenerator.builder(processingEnv);
+			MultiMethod.Builder builder = MultiMethod.builder(processingEnv);
 			for (ExecutableElement def : groups.get(name)) {
 				builder.add(def);
 			}
-			DecisionTreeGenerator generator = builder.build();
+			MultiMethod generator = builder.build();
 			if (generator == null) {
 				return;
 			}
@@ -81,8 +81,8 @@ public class CodeGenerator {
 			writer.format("public final class %s implements %s {\n", className, e.getQualifiedName());
 
 			defs.forEach(def -> {
-				DecisionTreeGenerator builder = builders.get(def.getSimpleName());
-				DecisionTree tree = builder.build(def);
+				MultiMethod builder = builders.get(def.getSimpleName());
+				EntryPoint tree = builder.getEntryPoint(def);
 				MethodCodeGenerator gen = new MethodCodeGenerator(e.getQualifiedName(), writer, tree, def);
 				gen.generateCode();
 			});
@@ -99,10 +99,10 @@ public class CodeGenerator {
 		private int indentation = 2;
 		private final Name moduleName;
 		private final PrintWriter writer;
-		private final DecisionTree tree;
+		private final EntryPoint tree;
 		private final ExecutableElement entryPoint;
 
-		public MethodCodeGenerator(Name moduleName, PrintWriter writer, DecisionTree tree, ExecutableElement entryPoint) {
+		public MethodCodeGenerator(Name moduleName, PrintWriter writer, EntryPoint tree, ExecutableElement entryPoint) {
 			this.moduleName = moduleName;
 			this.writer = writer;
 			this.tree = tree;
@@ -131,7 +131,7 @@ public class CodeGenerator {
 				writer.print(i++);
 			}
 			writer.println(") {");
-			generateForNode(tree.getRoot());
+			generateForNode(tree.getDecisionTree());
 			writer.println("\t}\n");
 
 		}
@@ -149,10 +149,11 @@ public class CodeGenerator {
 
 		@Override
 		public void visitDecision(DecisionNode node) {
-			if (node.getDefinition().isImplemented()) {
-				String call = moduleName + ".super." + node.getDefinition().getMethodName() + "(";
+			if (node.getDefinition().isDefault()) {
+				String call = moduleName + ".super." + node.getDefinition().getSimpleName() + "(";
 				int i = 0;
-				for (TypeMirror par : node.getDefinition().getParamTypes()) {
+				for (VariableElement parElem : node.getDefinition().getParameters()) {
+					TypeMirror par = parElem.asType();
 					if (i > 0) {
 						call += ", ";
 					}

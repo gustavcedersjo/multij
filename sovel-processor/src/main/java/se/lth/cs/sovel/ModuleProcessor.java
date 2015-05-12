@@ -17,9 +17,9 @@ import se.lth.cs.sovel.model.Module;
 @SupportedAnnotationTypes("se.lth.cs.sovel.Module")
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class ModuleProcessor extends AbstractProcessor {
-	
+
 	private CodeGenerator codeGen;
-	
+
 	public synchronized void init(javax.annotation.processing.ProcessingEnvironment processingEnv) {
 		codeGen = new CodeGenerator(processingEnv);
 		super.init(processingEnv);

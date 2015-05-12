@@ -14,11 +14,11 @@ public class EntryPoint {
 	public DecisionTree getDecisionTree() {
 		return root;
 	}
-	
+
 	public ExecutableElement getEntryPoint() {
 		return entryPoint;
 	}
-	
+
 	@Override
 	public String toString() {
 		return "EntryPoint(" + root + ")";

@@ -16,11 +16,8 @@ public class MethodArity implements CheckOneAnalysis {
 		int numCur = current.getParameters().size();
 		int numAdd = added.getParameters().size();
 		if (numCur != numAdd) {
-			messager.printMessage(
-				Diagnostic.Kind.ERROR,
-				"Wrong number of parameters: " +
-					"expected "+numCur+" but was "+numAdd+".",
-				added);
+			messager.printMessage(Diagnostic.Kind.ERROR, "Wrong number of parameters: " + "expected " + numCur
+					+ " but was " + numAdd + ".", added);
 			return false;
 		} else {
 			return true;

@@ -19,36 +19,36 @@ public class DispatchOnGenerics implements Analysis {
 	private final Types util;
 	private final Messager messager;
 	private static final HasGenerics hasGenerics = new HasGenerics();;
-	
+
 	public DispatchOnGenerics(ProcessingEnvironment processingEnv) {
 		util = processingEnv.getTypeUtils();
 		messager = processingEnv.getMessager();
 	}
-
 
 	@Override
 	public boolean check(List<ExecutableElement> definitions) {
 		Iterator<ExecutableElement> iter = definitions.iterator();
 		if (iter.hasNext()) {
 			List<? extends VariableElement> types = iter.next().getParameters();
-			boolean[] same = new boolean[types.size()];
-			Arrays.fill(same, true);
+			boolean[] noDispatch = new boolean[types.size()];
+			Arrays.fill(noDispatch, true);
 			while (iter.hasNext()) {
 				ExecutableElement def = iter.next();
-				for (int i = 0; i < same.length; i++) {
-					if (same[i] && !util.isSameType(types.get(i).asType(), def.getParameters().get(i).asType())) {
-						same[i] = false;
+				for (int i = 0; i < noDispatch.length; i++) {
+					if (noDispatch[i] && !util.isSameType(types.get(i).asType(), def.getParameters().get(i).asType())) {
+						noDispatch[i] = false;
 					}
 				}
 			}
-			
+
 			boolean result = true;
 			for (ExecutableElement def : definitions) {
-				for (int i = 0; i < same.length; i++) {
+				for (int i = 0; i < noDispatch.length; i++) {
 					VariableElement par = def.getParameters().get(i);
-					if (!same[i] && hasGenerics(par.asType())) {
+					if (!noDispatch[i] && hasGenerics(par.asType())) {
 						result = false;
-						messager.printMessage(Diagnostic.Kind.ERROR, "Can not do dynamic dispatch on generic type.", par);
+						messager.printMessage(Diagnostic.Kind.ERROR, "Can not do dynamic dispatch on generic type.",
+								par);
 					}
 				}
 			}
@@ -61,19 +61,18 @@ public class DispatchOnGenerics implements Analysis {
 	private boolean hasGenerics(TypeMirror typeMirror) {
 		return typeMirror.accept(hasGenerics, null);
 	}
-	
+
 	private static class HasGenerics extends SimpleTypeVisitor8<Boolean, Void> {
 
 		public HasGenerics() {
 			super(false);
 		}
-		
+
 		@Override
 		public Boolean visitDeclared(DeclaredType type, Void p) {
 			return !type.getTypeArguments().isEmpty();
 		}
-		
-		
+
 		@Override
 		public Boolean visitTypeVariable(TypeVariable type, Void p) {
 			return true;

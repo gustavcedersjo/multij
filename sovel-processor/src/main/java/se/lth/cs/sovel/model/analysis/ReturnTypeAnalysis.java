@@ -9,7 +9,7 @@ import javax.tools.Diagnostic;
 public class ReturnTypeAnalysis implements CheckOneAnalysis {
 	private final Types util;
 	private final Messager messager;
-	
+
 	public ReturnTypeAnalysis(ProcessingEnvironment processingEnv) {
 		util = processingEnv.getTypeUtils();
 		messager = processingEnv.getMessager();

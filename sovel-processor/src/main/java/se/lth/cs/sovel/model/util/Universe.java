@@ -77,7 +77,7 @@ public class Universe {
 		return new Builder(util);
 	}
 
-	public static class Builder implements Consumer<TypeMirror>  {
+	public static class Builder implements Consumer<TypeMirror> {
 		private final Types util;
 		private final List<TypeMirror> types;
 		private boolean built;
@@ -97,7 +97,7 @@ public class Universe {
 			if (built) {
 				throw new IllegalStateException();
 			}
-			if (types.stream().filter(t -> util.isSameType(t, type)).findAny().isPresent()) {
+			if (types.stream().anyMatch(t -> util.isSameType(t, type))) {
 				return;
 			}
 			types.add(type);

@@ -26,8 +26,9 @@ public class DecisionTreeBuilder {
 				.flatMap(d -> d.getParameters().stream())
 				.map(p -> p.asType())
 				.collect(Collectors.toList()), typeUtil);
-		conditionComparator = Comparator.comparingInt(Condition::getArgument).thenComparing(Condition::getType,
-				new SubtypeTotalOrder(typeUtil));
+		conditionComparator = Comparator
+				.comparingInt(Condition::getArgument)
+				.thenComparing(Condition::getType, new SubtypeTotalOrder(typeUtil));
 
 	}
 

@@ -21,5 +21,6 @@ public interface CheckOneAnalysis extends Analysis {
 			return true;
 		}
 	}
+
 	public boolean checkOne(ExecutableElement current, ExecutableElement added);
 }

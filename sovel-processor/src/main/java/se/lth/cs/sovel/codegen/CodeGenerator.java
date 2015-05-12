@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -38,13 +39,18 @@ public class CodeGenerator {
 			JavaFileObject file = processingEnv.getFiler().createSourceFile(className, module.getTypeElement());
 			PrintWriter writer = new PrintWriter(file.openWriter());
 
-			writer.format("package %s;\n", processingEnv.getElementUtils().getPackageOf(module.getTypeElement()).getQualifiedName());
-			writer.format("public final class %s implements %s {\n", className, module.getTypeElement().getQualifiedName());
-			
-			for(MultiMethod multiMethod : module.getMultiMethods()) {
+			PackageElement pkg = processingEnv.getElementUtils()
+					.getPackageOf(module.getTypeElement());
+			if (!pkg.isUnnamed()) {
+				writer.format("package %s;\n", pkg.getQualifiedName());
+			}
+			writer.format("public final class %s implements %s {\n", className, module.getTypeElement()
+					.getQualifiedName());
+
+			for (MultiMethod multiMethod : module.getMultiMethods()) {
 				for (EntryPoint entryPoint : multiMethod.getEntryPoints()) {
-					MethodCodeGenerator gen = new MethodCodeGenerator(
-							module.getTypeElement().getQualifiedName(), writer, entryPoint);
+					MethodCodeGenerator gen = new MethodCodeGenerator(module.getTypeElement().getQualifiedName(),
+							writer, entryPoint);
 					gen.generateCode();
 				}
 			}
@@ -72,7 +78,6 @@ public class CodeGenerator {
 		}
 
 		public void generateCode() {
-			writer.println("\t/* " + tree + " */");
 			String typeParDecl;
 			if (entryPoint.getTypeParameters().isEmpty()) {
 				typeParDecl = "";

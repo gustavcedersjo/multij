@@ -10,32 +10,32 @@ import se.lth.cs.sovel.model.Condition;
 public class Knowledge {
 	private final Universe universe;
 	private final Map<Condition, Boolean> knowledge;
-	
+
 	private Knowledge(Universe universe, Map<Condition, Boolean> knowledge) {
 		this.universe = universe;
 		this.knowledge = knowledge;
 	}
-	
+
 	public static Builder builder(Universe universe) {
 		return new Builder(universe, new HashMap<>());
 	}
-	
+
 	public boolean isTrue(Condition c) {
 		return knowledge.getOrDefault(c, false);
 	}
-	
+
 	public boolean isFalse(Condition c) {
 		return !knowledge.getOrDefault(c, true);
 	}
-	
+
 	public boolean isKnown(Condition c) {
 		return knowledge.containsKey(c);
 	}
-	
+
 	public Builder copy() {
 		return new Builder(universe, new HashMap<>(knowledge));
 	}
-	
+
 	public static class Builder {
 		private Map<Condition, Boolean> knowledge;
 		private final Universe universe;
@@ -44,7 +44,7 @@ public class Knowledge {
 			this.knowledge = knowledge;
 			this.universe = universe;
 		}
-		
+
 		public Builder add(Condition cond, boolean truth) {
 			if (knowledge == null) {
 				throw new IllegalStateException("Knowledge already built.");
@@ -67,6 +67,7 @@ public class Knowledge {
 			}
 			return this;
 		}
+
 		public Knowledge build() {
 			Knowledge result = new Knowledge(universe, knowledge);
 			knowledge = null;

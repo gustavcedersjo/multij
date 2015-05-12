@@ -21,7 +21,7 @@ public class Condition {
 
 	@Override
 	public String toString() {
-		return "Condition("+argument+", "+type+")";
+		return "Condition(" + argument + ", " + type + ")";
 	}
 
 	@Override

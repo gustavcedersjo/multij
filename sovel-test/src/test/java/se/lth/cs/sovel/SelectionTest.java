@@ -99,7 +99,17 @@ public class SelectionTest {
 		assertEquals("Wrong method selected", 9, example.interfaceInheritance((Top) bottom));
 		assertEquals("Wrong method selected", 9, example.interfaceInheritance((Left) bottom));
 		assertEquals("Wrong method selected", 9, example.interfaceInheritance((Right) bottom));
+	}
 
+	@Test
+	public void nullParameter() {
+		Object n = null;
+		String s = null;
+		Integer i = null;
+		Examples example = Sovel.instance(Examples.class);
+		assertEquals("Wrong method selected", 3, example.classInheritance(n));
+		assertEquals("Wrong method selected", 4, example.classInheritance(s));
+		assertEquals("Wrong method selected", 5, example.classInheritance(i));
 	}
 
 }

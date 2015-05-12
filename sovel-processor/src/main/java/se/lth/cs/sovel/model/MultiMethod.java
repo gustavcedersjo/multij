@@ -34,7 +34,7 @@ public class MultiMethod {
 		this.util = util;
 	}
 
-	public static Builder builder(ProcessingEnvironment procEnv) {
+	private static Builder builder(ProcessingEnvironment procEnv) {
 		List<Analysis> analyses = new ArrayList<>();
 		analyses.add(new MethodArity(procEnv));
 		analyses.add(new MatchingPrimitiveTypes(procEnv));
@@ -44,7 +44,7 @@ public class MultiMethod {
 		return new Builder(analyses, procEnv.getTypeUtils());
 	}
 
-	public static class Builder {
+	private static class Builder {
 		private final List<ExecutableElement> definitions;
 		private final List<Analysis> analyses;
 		private final Types util;
@@ -78,8 +78,11 @@ public class MultiMethod {
 		}
 
 	}
+	public List<EntryPoint> getEntryPoints() {
+		return definitions.stream().map(this::getEntryPoint).collect(Collectors.toList());
+	}
 	
-	public EntryPoint getEntryPoint(ExecutableElement entry) {
+	private EntryPoint getEntryPoint(ExecutableElement entry) {
 		Knowledge.Builder builder = Knowledge.builder(universe);
 		for (Condition cond : getConditions(entry)) {
 			builder.add(cond, true);
@@ -168,5 +171,13 @@ public class MultiMethod {
 		return getConditions(def).stream()
 				.allMatch(cond -> knowledge.isTrue(cond));
 
+	}
+
+	public static Optional<MultiMethod> fromExecutableElements(List<ExecutableElement> definitions, ProcessingEnvironment processingEnv) {
+		MultiMethod.Builder builder = MultiMethod.builder(processingEnv);
+		for (ExecutableElement def : definitions) {
+			builder.add(def);
+		}
+		return Optional.ofNullable(builder.build());
 	}
 }

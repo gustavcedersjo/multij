@@ -1,5 +1,6 @@
 package se.lth.cs.sovel;
 
+import java.util.Optional;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -8,11 +9,10 @@ import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
-import javax.tools.Diagnostic.Kind;
 
 import se.lth.cs.sovel.codegen.CodeGenerator;
+import se.lth.cs.sovel.model.Module;
 
 @SupportedAnnotationTypes("se.lth.cs.sovel.Module")
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
@@ -27,18 +27,15 @@ public class ModuleProcessor extends AbstractProcessor {
 
 	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-		for (Element e : roundEnv.getElementsAnnotatedWith(Module.class)) {
-			if (e.getKind() == ElementKind.INTERFACE) {
-				generateSource((TypeElement) e);
-			} else {
-				processingEnv.getMessager().printMessage(Kind.ERROR, "Can only create modules from interfaces.", e);
+		for (Element e : roundEnv.getElementsAnnotatedWith(se.lth.cs.sovel.Module.class)) {
+			if (e instanceof TypeElement) {
+				Optional<Module> module = Module.fromTypeElement((TypeElement) e, processingEnv);
+				if (module.isPresent()) {
+					codeGen.generateSource(module.get());
+				}
 			}
 		}
 		return false;
-	}
-
-	private void generateSource(TypeElement e) {
-		codeGen.generateSource(e);
 	}
 
 }

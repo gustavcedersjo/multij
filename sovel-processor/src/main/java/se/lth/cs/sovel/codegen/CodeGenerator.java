@@ -1,19 +1,12 @@
 package se.lth.cs.sovel.codegen;
 
-import static javax.lang.model.util.ElementFilter.methodsIn;
-
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
-import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -25,6 +18,7 @@ import se.lth.cs.sovel.AmbiguityException;
 import se.lth.cs.sovel.MissingDefinitionException;
 import se.lth.cs.sovel.model.DecisionTree;
 import se.lth.cs.sovel.model.EntryPoint;
+import se.lth.cs.sovel.model.Module;
 import se.lth.cs.sovel.model.MultiMethod;
 
 public class CodeGenerator {
@@ -38,50 +32,22 @@ public class CodeGenerator {
 		return processingEnv.getTypeUtils();
 	}
 
-	public void generateSource(TypeElement e) {
-		List<ExecutableElement> methods = methodsIn(processingEnv.getElementUtils().getAllMembers((TypeElement) e));
-
-		Set<Name> names = methods.stream()
-				.filter(d -> !"java.lang.Object".equals(((TypeElement) d.getEnclosingElement()).getQualifiedName()
-						.toString()))
-				.map(d -> d.getSimpleName())
-				.collect(Collectors.toSet());
-
-		List<ExecutableElement> defs = methods.stream()
-				.filter(m -> names.contains(m.getSimpleName()))
-				.collect(Collectors.toList());
-
-		Map<Name, List<ExecutableElement>> groups = defs.stream()
-				.collect(Collectors.groupingBy(m -> m.getSimpleName()));
-
-		Map<Name, MultiMethod> builders = new HashMap<>();
-
-		for (Name name : groups.keySet()) {
-			MultiMethod.Builder builder = MultiMethod.builder(processingEnv);
-			for (ExecutableElement def : groups.get(name)) {
-				builder.add(def);
-			}
-			MultiMethod generator = builder.build();
-			if (generator == null) {
-				return;
-			}
-			builders.put(name, generator);
-		}
-
+	public void generateSource(Module module) {
 		try {
-			String className = e.getSimpleName() + "Sovel";
-			JavaFileObject file = processingEnv.getFiler().createSourceFile(className, e);
+			String className = module.getTypeElement().getSimpleName() + "Sovel";
+			JavaFileObject file = processingEnv.getFiler().createSourceFile(className, module.getTypeElement());
 			PrintWriter writer = new PrintWriter(file.openWriter());
 
-			writer.format("package %s;\n", processingEnv.getElementUtils().getPackageOf(e).getQualifiedName());
-			writer.format("public final class %s implements %s {\n", className, e.getQualifiedName());
-
-			defs.forEach(def -> {
-				MultiMethod builder = builders.get(def.getSimpleName());
-				EntryPoint tree = builder.getEntryPoint(def);
-				MethodCodeGenerator gen = new MethodCodeGenerator(e.getQualifiedName(), writer, tree);
-				gen.generateCode();
-			});
+			writer.format("package %s;\n", processingEnv.getElementUtils().getPackageOf(module.getTypeElement()).getQualifiedName());
+			writer.format("public final class %s implements %s {\n", className, module.getTypeElement().getQualifiedName());
+			
+			for(MultiMethod multiMethod : module.getMultiMethods()) {
+				for (EntryPoint entryPoint : multiMethod.getEntryPoints()) {
+					MethodCodeGenerator gen = new MethodCodeGenerator(
+							module.getTypeElement().getQualifiedName(), writer, entryPoint);
+					gen.generateCode();
+				}
+			}
 
 			writer.println("}");
 			writer.close();

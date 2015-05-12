@@ -1,9 +1,11 @@
-package se.lth.cs.sovel.model;
+package se.lth.cs.sovel.model.util;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.lang.model.type.TypeMirror;
+
+import se.lth.cs.sovel.model.Condition;
 
 public class Knowledge {
 	private final Universe universe;

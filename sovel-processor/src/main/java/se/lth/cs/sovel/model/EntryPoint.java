@@ -18,7 +18,7 @@ public class EntryPoint {
 	public ExecutableElement getEntryPoint() {
 		return entryPoint;
 	}
-
+	
 	@Override
 	public String toString() {
 		return "EntryPoint(" + root + ")";

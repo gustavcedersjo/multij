@@ -1,4 +1,4 @@
-package se.lth.cs.sovel.model;
+package se.lth.cs.sovel.model.util;
 
 import java.util.Comparator;
 import javax.lang.model.type.TypeMirror;

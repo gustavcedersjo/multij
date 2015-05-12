@@ -1,8 +1,9 @@
-package se.lth.cs.sovel.model;
+package se.lth.cs.sovel.model.util;
 
 import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -106,5 +107,11 @@ public class Universe {
 			built = true;
 			return new Universe(util, types);
 		}
+	}
+
+	public static Universe of(Collection<TypeMirror> collect, Types util) {
+		Builder builder = builder(util);
+		collect.forEach(builder);
+		return builder.build();
 	}
 }

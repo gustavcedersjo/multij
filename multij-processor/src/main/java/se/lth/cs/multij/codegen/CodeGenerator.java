@@ -36,11 +36,12 @@ public class CodeGenerator {
 	public void generateSource(Module module) {
 		try {
 			String className = module.getTypeElement().getSimpleName() + "MultiJ";
-			JavaFileObject file = processingEnv.getFiler().createSourceFile(className, module.getTypeElement());
-			PrintWriter writer = new PrintWriter(file.openWriter());
-
 			PackageElement pkg = processingEnv.getElementUtils()
 					.getPackageOf(module.getTypeElement());
+			String qualifiedName = pkg.isUnnamed() ? className : pkg.getQualifiedName() + "." + className;
+			JavaFileObject file = processingEnv.getFiler().createSourceFile(qualifiedName, module.getTypeElement());
+			PrintWriter writer = new PrintWriter(file.openWriter());
+
 			if (!pkg.isUnnamed()) {
 				writer.format("package %s;\n", pkg.getQualifiedName());
 			}

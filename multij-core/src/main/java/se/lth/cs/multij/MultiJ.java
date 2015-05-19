@@ -5,7 +5,13 @@ public class MultiJ {
 	public static <T> T instance(Class<T> module) {
 		if (module.getAnnotation(Module.class) != null) {
 			try {
-				String name = module.getPackage().getName() + "." + module.getSimpleName() + "MultiJ";
+				Class<?> klass = module;
+				String name = "MultiJ";
+				do {
+					name = klass.getSimpleName() + "$" + name;
+					klass = klass.getEnclosingClass();
+				} while (klass != null);
+				name = module.getPackage().getName() + "." + name;
 				return (T) Class.forName(name).newInstance();
 			} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
 				throw new RuntimeException(e);

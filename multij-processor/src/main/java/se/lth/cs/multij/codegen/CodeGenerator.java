@@ -5,10 +5,7 @@ import java.io.PrintWriter;
 import java.util.stream.Collectors;
 
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Name;
-import javax.lang.model.element.PackageElement;
-import javax.lang.model.element.VariableElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
@@ -33,9 +30,18 @@ public class CodeGenerator {
 		return processingEnv.getTypeUtils();
 	}
 
+	private String className(Element element) {
+		String name = "MultiJ";
+		do {
+			name = element.getSimpleName() + "$" + name;
+			element = element.getEnclosingElement();
+		} while (element.getKind() != ElementKind.PACKAGE);
+		return name;
+	}
+
 	public void generateSource(Module module) {
 		try {
-			String className = module.getTypeElement().getSimpleName() + "MultiJ";
+			String className = className(module.getTypeElement());
 			PackageElement pkg = processingEnv.getElementUtils()
 					.getPackageOf(module.getTypeElement());
 			String qualifiedName = pkg.isUnnamed() ? className : pkg.getQualifiedName() + "." + className;

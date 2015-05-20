@@ -16,16 +16,20 @@ import javax.tools.Diagnostic.Kind;
 
 public class Module {
 	private final TypeElement typeElement;
+	private final List<ExecutableElement> moduleReferences;
 	private final List<MultiMethod> multiMethods;
 
-	private Module(TypeElement typeElement, List<MultiMethod> multiMethods) {
+	private Module(TypeElement typeElement, List<ExecutableElement> moduleReferences, List<MultiMethod> multiMethods) {
 		this.typeElement = typeElement;
+		this.moduleReferences = moduleReferences;
 		this.multiMethods = multiMethods;
 	}
 
 	public TypeElement getTypeElement() {
 		return typeElement;
 	}
+
+	public List<ExecutableElement> getModuleReferences() { return moduleReferences; }
 
 	public List<MultiMethod> getMultiMethods() {
 		return multiMethods;
@@ -39,8 +43,14 @@ public class Module {
 		}
 		List<ExecutableElement> methods = methodsIn(processingEnv.getElementUtils().getAllMembers(typeElement));
 
+		List<ExecutableElement> moduleRefs = methods.stream()
+				.filter(m -> m.getParameters().isEmpty())
+				.filter(m -> m.getAnnotation(se.lth.cs.multij.Module.class) != null)
+				.collect(Collectors.toList());
+
 		Set<Name> methodNames = methods.stream()
 				.filter(d -> !isDefinedInObject(d))
+				.filter(d -> !moduleRefs.contains(d))
 				.map(d -> d.getSimpleName())
 				.collect(Collectors.toSet());
 
@@ -52,7 +62,7 @@ public class Module {
 				.collect(Collectors.toList());
 
 		if (multiMethods.stream().allMatch(Optional::isPresent)) {
-			return Optional.of(new Module(typeElement, multiMethods.stream()
+			return Optional.of(new Module(typeElement, moduleRefs, multiMethods.stream()
 					.map(Optional::get)
 					.collect(Collectors.toList())));
 		} else {

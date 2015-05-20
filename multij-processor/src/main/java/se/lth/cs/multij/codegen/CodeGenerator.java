@@ -14,6 +14,7 @@ import javax.tools.JavaFileObject;
 
 import se.lth.cs.multij.AmbiguityException;
 import se.lth.cs.multij.MissingDefinitionException;
+import se.lth.cs.multij.ModuleRepository;
 import se.lth.cs.multij.model.DecisionTree;
 import se.lth.cs.multij.model.EntryPoint;
 import se.lth.cs.multij.model.Module;
@@ -54,19 +55,41 @@ public class CodeGenerator {
 			writer.format("public final class %s implements %s {\n", className, module.getTypeElement()
 					.getQualifiedName());
 
-			for (MultiMethod multiMethod : module.getMultiMethods()) {
-				for (EntryPoint entryPoint : multiMethod.getEntryPoints()) {
-					MethodCodeGenerator gen = new MethodCodeGenerator(module.getTypeElement().getQualifiedName(),
-							writer, entryPoint);
-					gen.generateCode();
-				}
-			}
+			generateModuleRefs(module, writer);
+			generateMultiMethods(module, writer);
 
 			writer.println("}");
 			writer.close();
 		} catch (IOException ex) {
 			processingEnv.getMessager().printMessage(Kind.ERROR, ex.getMessage());
 		}
+	}
+
+	private void generateMultiMethods(Module module, PrintWriter writer) {
+		for (MultiMethod multiMethod : module.getMultiMethods()) {
+			for (EntryPoint entryPoint : multiMethod.getEntryPoints()) {
+				MethodCodeGenerator gen = new MethodCodeGenerator(module.getTypeElement().getQualifiedName(),
+						writer, entryPoint);
+				gen.generateCode();
+			}
+		}
+	}
+
+	private void generateModuleRefs(Module module, PrintWriter writer) {
+		for (ExecutableElement modRef : module.getModuleReferences()) {
+			writer.format("\tprivate %s module$%s;\n", modRef.getReturnType(), modRef.getSimpleName());
+		}
+		for (ExecutableElement modRef : module.getModuleReferences()) {
+			writer.format("\tpublic %s %s() { return module$%2$s; }\n", modRef.getReturnType(), modRef.getSimpleName());
+		}
+		writer.println("\tprivate boolean multij$initialized = false;");
+		writer.format("\tpublic void multij$init(%s repo) {\n", ModuleRepository.class.getCanonicalName());
+		writer.println("\t\tif (multij$initialized) throw new IllegalStateException();");
+		for (ExecutableElement modRef : module.getModuleReferences()) {
+			writer.format("\t\tmodule$%s = repo.getModule(%s.class);\n", modRef.getSimpleName(), modRef.getReturnType());
+		}
+		writer.println("\t\tmultij$initialized = true;");
+		writer.println("\t}\n");
 	}
 
 	private class MethodCodeGenerator implements DecisionTree.Visitor {

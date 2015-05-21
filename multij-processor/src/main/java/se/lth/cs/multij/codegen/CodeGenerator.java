@@ -84,7 +84,7 @@ public class CodeGenerator {
 		}
 		writer.println("\tprivate boolean multij$initialized = false;");
 		writer.format("\tpublic void multij$init(%s repo) {\n", ModuleRepository.class.getCanonicalName());
-		writer.println("\t\tif (multij$initialized) throw new IllegalStateException();");
+		writer.format("\t\tif (multij$initialized) throw new %s();\n", IllegalStateException.class.getCanonicalName());
 		for (ExecutableElement modRef : module.getModuleReferences()) {
 			writer.format("\t\tmodule$%s = repo.getModule(%s.class);\n", modRef.getSimpleName(), modRef.getReturnType());
 		}

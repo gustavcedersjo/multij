@@ -28,24 +28,26 @@ public class CacheTest {
 	interface Primitive {
 		@Cached
 		default AtomicInteger intBox() {
-			return new AtomicInteger(5);
+			return new AtomicInteger();
 		}
 
 		@Cached
 		default int intValA() {
-			return intBox().getAndIncrement();
+			return intBox().get();
 		}
 
 		@Cached
 		default int intValB() {
-			return intBox().getAndIncrement();
+			return intBox().get();
 		}
 	}
 
 	@Test
 	public void testCachedPrimitive() {
 		Primitive b = MultiJ.instance(Primitive.class);
+		b.intBox().set(5);
 		assertEquals("Wrong value", 5, b.intValA());
+		b.intBox().set(6);
 		assertEquals("Wrong value", 6, b.intValB());
 		assertEquals("Wrong value", 5, b.intValA());
 		assertEquals("Wrong value", 6, b.intValB());

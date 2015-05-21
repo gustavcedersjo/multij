@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
@@ -12,17 +11,13 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.SimpleTypeVisitor8;
-import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
-public class DispatchOnGenerics implements Analysis {
-	private final Types util;
-	private final Messager messager;
-	private static final HasGenerics hasGenerics = new HasGenerics();;
+public class DispatchOnGenerics extends AbstractMultiMethodAnalysis {
+	private static final HasGenerics hasGenerics = new HasGenerics();
 
 	public DispatchOnGenerics(ProcessingEnvironment processingEnv) {
-		util = processingEnv.getTypeUtils();
-		messager = processingEnv.getMessager();
+		super(processingEnv);
 	}
 
 	@Override
@@ -35,7 +30,7 @@ public class DispatchOnGenerics implements Analysis {
 			while (iter.hasNext()) {
 				ExecutableElement def = iter.next();
 				for (int i = 0; i < noDispatch.length; i++) {
-					if (noDispatch[i] && !util.isSameType(types.get(i).asType(), def.getParameters().get(i).asType())) {
+					if (noDispatch[i] && !typeUtils().isSameType(types.get(i).asType(), def.getParameters().get(i).asType())) {
 						noDispatch[i] = false;
 					}
 				}
@@ -47,7 +42,7 @@ public class DispatchOnGenerics implements Analysis {
 					VariableElement par = def.getParameters().get(i);
 					if (!noDispatch[i] && hasGenerics(par.asType())) {
 						result = false;
-						messager.printMessage(Diagnostic.Kind.ERROR, "Can not do dynamic dispatch on generic type.",
+						messager().printMessage(Diagnostic.Kind.ERROR, "Can not do dynamic dispatch on generic type.",
 								par);
 					}
 				}

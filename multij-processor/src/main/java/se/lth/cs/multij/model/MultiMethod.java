@@ -8,7 +8,7 @@ import java.util.stream.Stream;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 
-import se.lth.cs.multij.model.analysis.Analysis;
+import se.lth.cs.multij.model.analysis.MultiMethodAnalysis;
 import se.lth.cs.multij.model.analysis.DispatchOnGenerics;
 import se.lth.cs.multij.model.analysis.MatchingPrimitiveTypes;
 import se.lth.cs.multij.model.analysis.MethodArity;
@@ -29,7 +29,7 @@ public class MultiMethod {
 
 	public static Optional<MultiMethod> fromExecutableElements(List<ExecutableElement> definitions,
 			ProcessingEnvironment processingEnv) {
-		Stream<Analysis> analyses = Stream.of(
+		Stream<MultiMethodAnalysis> analyses = Stream.of(
 				new MethodArity(processingEnv),
 				new MatchingPrimitiveTypes(processingEnv),
 				new ReturnTypeAnalysis(processingEnv),

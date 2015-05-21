@@ -1,24 +1,18 @@
 package se.lth.cs.multij.model.analysis;
 
-import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
-public class ReturnTypeAnalysis implements CheckOneAnalysis {
-	private final Types util;
-	private final Messager messager;
-
+public class ReturnTypeAnalysis extends DefinitionComparison {
 	public ReturnTypeAnalysis(ProcessingEnvironment processingEnv) {
-		util = processingEnv.getTypeUtils();
-		messager = processingEnv.getMessager();
+		super(processingEnv);
 	}
 
 	@Override
 	public boolean checkOne(ExecutableElement current, ExecutableElement added) {
-		if (!util.isSameType(current.getReturnType(), added.getReturnType())) {
-			messager.printMessage(Diagnostic.Kind.ERROR, "Method is defined with other return type elsewhere", added);
+		if (!typeUtils().isSameType(current.getReturnType(), added.getReturnType())) {
+			messager().printMessage(Diagnostic.Kind.ERROR, "Method is defined with other return type elsewhere", added);
 			return false;
 		} else {
 			return true;

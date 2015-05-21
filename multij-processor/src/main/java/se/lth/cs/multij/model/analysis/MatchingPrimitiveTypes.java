@@ -4,7 +4,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
@@ -12,11 +11,9 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 
-public class MatchingPrimitiveTypes implements CheckOneAnalysis {
-	private final Messager messager;
-
+public class MatchingPrimitiveTypes extends DefinitionComparison {
 	public MatchingPrimitiveTypes(ProcessingEnvironment procEnv) {
-		messager = procEnv.getMessager();
+		super(procEnv);
 	}
 
 	private static final Set<TypeKind> primitive = EnumSet.of(
@@ -50,7 +47,7 @@ public class MatchingPrimitiveTypes implements CheckOneAnalysis {
 							" is defined with " +
 							(isPrimitive(add) ? "another" : "a") +
 							" primitive type elsewhere.";
-					messager.printMessage(Diagnostic.Kind.ERROR, message, addPar.get(i));
+					messager().printMessage(Diagnostic.Kind.ERROR, message, addPar.get(i));
 				}
 			}
 		}

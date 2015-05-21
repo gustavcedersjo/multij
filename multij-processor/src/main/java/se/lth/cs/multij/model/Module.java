@@ -1,5 +1,7 @@
 package se.lth.cs.multij.model;
 
+import se.lth.cs.multij.Cached;
+
 import static javax.lang.model.util.ElementFilter.methodsIn;
 
 import java.util.List;
@@ -17,11 +19,13 @@ import javax.tools.Diagnostic.Kind;
 public class Module {
 	private final TypeElement typeElement;
 	private final List<ExecutableElement> moduleReferences;
+	private final List<ExecutableElement> cachedAttributes;
 	private final List<MultiMethod> multiMethods;
 
-	private Module(TypeElement typeElement, List<ExecutableElement> moduleReferences, List<MultiMethod> multiMethods) {
+	private Module(TypeElement typeElement, List<ExecutableElement> moduleReferences, List<ExecutableElement> cachedAttributes, List<MultiMethod> multiMethods) {
 		this.typeElement = typeElement;
 		this.moduleReferences = moduleReferences;
+		this.cachedAttributes = cachedAttributes;
 		this.multiMethods = multiMethods;
 	}
 
@@ -30,6 +34,8 @@ public class Module {
 	}
 
 	public List<ExecutableElement> getModuleReferences() { return moduleReferences; }
+
+	public List<ExecutableElement> getCachedAttributes() { return cachedAttributes; }
 
 	public List<MultiMethod> getMultiMethods() {
 		return multiMethods;
@@ -48,9 +54,16 @@ public class Module {
 				.filter(m -> m.getAnnotation(se.lth.cs.multij.Module.class) != null)
 				.collect(Collectors.toList());
 
+		List<ExecutableElement> cachedAttrs = methods.stream()
+				.filter(m -> m.getParameters().isEmpty())
+				.filter(m -> m.getAnnotation(Cached.class) != null)
+				.filter(d -> !moduleRefs.contains(d))
+				.collect(Collectors.toList());
+
 		Set<Name> methodNames = methods.stream()
 				.filter(d -> !isDefinedInObject(d))
 				.filter(d -> !moduleRefs.contains(d))
+				.filter(d -> !cachedAttrs.contains(d))
 				.map(d -> d.getSimpleName())
 				.collect(Collectors.toSet());
 
@@ -62,7 +75,7 @@ public class Module {
 				.collect(Collectors.toList());
 
 		if (multiMethods.stream().allMatch(Optional::isPresent)) {
-			return Optional.of(new Module(typeElement, moduleRefs, multiMethods.stream()
+			return Optional.of(new Module(typeElement, moduleRefs, cachedAttrs, multiMethods.stream()
 					.map(Optional::get)
 					.collect(Collectors.toList())));
 		} else {

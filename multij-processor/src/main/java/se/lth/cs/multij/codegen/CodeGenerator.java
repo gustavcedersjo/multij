@@ -13,6 +13,7 @@ import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 
 import se.lth.cs.multij.AmbiguityException;
+import se.lth.cs.multij.CircularityException;
 import se.lth.cs.multij.MissingDefinitionException;
 import se.lth.cs.multij.ModuleRepository;
 import se.lth.cs.multij.model.DecisionTree;
@@ -56,6 +57,7 @@ public class CodeGenerator {
 					.getQualifiedName());
 
 			generateModuleRefs(module, writer);
+			generateCachedAttrs(module, writer);
 			generateMultiMethods(module, writer);
 
 			writer.println("}");
@@ -90,6 +92,36 @@ public class CodeGenerator {
 		}
 		writer.println("\t\tmultij$initialized = true;");
 		writer.println("\t}\n");
+	}
+
+	private void generateCachedAttrs(Module module, PrintWriter writer) {
+		for (ExecutableElement attr : module.getCachedAttributes()) {
+			Name name = attr.getSimpleName();
+			TypeMirror type = attr.getReturnType();
+			Name moduleName = module.getTypeElement().getQualifiedName();
+			writer.format("boolean cache$init$%s = false;\n", name);
+			writer.format("boolean cache$done$%s = false;\n", name);
+			writer.format("%s cache$value$%s;\n\n", type, name);
+			writer.format("public synchronized %s %s() {", type, name);
+			writer.format("\tif (cache$done$%s) {", name);
+			writer.format("\t\treturn cache$value$%s;\n", name);
+			writer.format("\t} else if (cache$init$%s) {\n", name);
+			writer.format("\t\tthrow new CircularityException();\n");
+			writer.format("\t} else {\n");
+			writer.format("\t\ttry {\n");
+			writer.format("\t\t\tcache$init$%s = true;\n", name);
+			writer.format("\t\t\tcache$value$%s = %s.super.%1$s();\n", name, moduleName);
+			writer.format("\t\t\tcache$done$%s = true;\n", name);
+			writer.format("\t\t\treturn cache$value$%s;\n", name);
+			writer.format("\t\t} catch (%s e) {\n", CircularityException.class.getCanonicalName());
+			writer.format("\t\t\tthrow e;\n");
+			writer.format("\t\t} catch (%s | %s e) {\n", RuntimeException.class.getCanonicalName(), Error.class.getCanonicalName());
+			writer.format("\t\t\tcache$init$%s = false;\n", name);
+			writer.format("\t\t\tthrow e;\n");
+			writer.format("\t\t}\n");
+			writer.format("\t}\n");
+			writer.format("}\n\n");
+		}
 	}
 
 	private class MethodCodeGenerator implements DecisionTree.Visitor {

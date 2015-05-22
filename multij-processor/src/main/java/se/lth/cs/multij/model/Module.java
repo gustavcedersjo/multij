@@ -1,6 +1,7 @@
 package se.lth.cs.multij.model;
 
 import se.lth.cs.multij.Cached;
+import se.lth.cs.multij.model.analysis.*;
 
 import static javax.lang.model.util.ElementFilter.methodsIn;
 
@@ -33,9 +34,13 @@ public class Module {
 		return typeElement;
 	}
 
-	public List<ExecutableElement> getModuleReferences() { return moduleReferences; }
+	public List<ExecutableElement> getModuleReferences() {
+		return moduleReferences;
+	}
 
-	public List<ExecutableElement> getCachedAttributes() { return cachedAttributes; }
+	public List<ExecutableElement> getCachedAttributes() {
+		return cachedAttributes;
+	}
 
 	public List<MultiMethod> getMultiMethods() {
 		return multiMethods;
@@ -47,6 +52,9 @@ public class Module {
 					typeElement);
 			return Optional.empty();
 		}
+		boolean analysisPassed = true;
+		Analysis analysis = Analysis.defaultAnalysis(processingEnv);
+
 		List<ExecutableElement> methods = methodsIn(processingEnv.getElementUtils().getAllMembers(typeElement));
 
 		List<ExecutableElement> moduleRefs = methods.stream()
@@ -54,37 +62,56 @@ public class Module {
 				.filter(m -> m.getAnnotation(se.lth.cs.multij.Module.class) != null)
 				.collect(Collectors.toList());
 
+		for (ExecutableElement ref : moduleRefs) {
+			if (!analysis.checkModuleRef(ref)) {
+				analysisPassed = false;
+			}
+		}
+
 		List<ExecutableElement> cachedAttrs = methods.stream()
 				.filter(m -> m.getParameters().isEmpty())
 				.filter(m -> m.getAnnotation(Cached.class) != null)
 				.filter(d -> !moduleRefs.contains(d))
 				.collect(Collectors.toList());
 
+		for (ExecutableElement attr : cachedAttrs) {
+			if (!analysis.checkCachedAttr(attr)) {
+				analysisPassed = false;
+			}
+		}
+
 		Set<Name> methodNames = methods.stream()
 				.filter(d -> !isDefinedInObject(d))
 				.filter(d -> !moduleRefs.contains(d))
 				.filter(d -> !cachedAttrs.contains(d))
-				.map(d -> d.getSimpleName())
+				.map(ExecutableElement::getSimpleName)
 				.collect(Collectors.toSet());
 
-		List<Optional<MultiMethod>> multiMethods = methodNames.stream()
+		List<List<ExecutableElement>> multiMethodDefinitions = methodNames.stream()
 				.map(name -> methods.stream()
 						.filter(m -> m.getSimpleName().equals(name))
 						.collect(Collectors.toList()))
+				.collect(Collectors.toList());
+
+		for (List<ExecutableElement> defs : multiMethodDefinitions) {
+			if (!analysis.checkMultiMethod(defs)) {
+				analysisPassed = false;
+			}
+		}
+
+		List<MultiMethod> multiMethods = multiMethodDefinitions.stream()
 				.map(defs -> MultiMethod.fromExecutableElements(defs, processingEnv))
 				.collect(Collectors.toList());
 
-		if (multiMethods.stream().allMatch(Optional::isPresent)) {
-			return Optional.of(new Module(typeElement, moduleRefs, cachedAttrs, multiMethods.stream()
-					.map(Optional::get)
-					.collect(Collectors.toList())));
+		if (analysisPassed) {
+			return Optional.of(new Module(typeElement, moduleRefs, cachedAttrs, multiMethods));
 		} else {
 			return Optional.empty();
 		}
-
 	}
 
 	private static boolean isDefinedInObject(ExecutableElement d) {
 		return ((TypeElement) d.getEnclosingElement()).getQualifiedName().contentEquals("java.lang.Object");
 	}
+
 }

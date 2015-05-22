@@ -5,10 +5,10 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 
-public abstract class AbstractMultiMethodAnalysis implements MultiMethodAnalysis {
+public abstract class AnalysisBase {
 	protected final ProcessingEnvironment processingEnv;
 
-	public AbstractMultiMethodAnalysis(ProcessingEnvironment processingEnv) {
+	public AnalysisBase(ProcessingEnvironment processingEnv) {
 		this.processingEnv = processingEnv;
 	}
 

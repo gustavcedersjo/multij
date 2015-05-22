@@ -11,7 +11,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 
-public class MatchingPrimitiveTypes extends DefinitionComparison {
+public class MatchingPrimitiveTypes extends AnalysisBase implements DefinitionComparison {
 	public MatchingPrimitiveTypes(ProcessingEnvironment procEnv) {
 		super(procEnv);
 	}

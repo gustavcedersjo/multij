@@ -4,7 +4,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.tools.Diagnostic;
 
-public class ReturnTypeAnalysis extends DefinitionComparison {
+public class ReturnTypeAnalysis extends AnalysisBase implements DefinitionComparison {
 	public ReturnTypeAnalysis(ProcessingEnvironment processingEnv) {
 		super(processingEnv);
 	}

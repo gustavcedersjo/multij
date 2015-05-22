@@ -4,7 +4,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.tools.Diagnostic;
 
-public class MethodArity extends DefinitionComparison {
+public class MethodArity extends AnalysisBase implements DefinitionComparison {
 	public MethodArity(ProcessingEnvironment procEnv) {
 		super(procEnv);
 	}

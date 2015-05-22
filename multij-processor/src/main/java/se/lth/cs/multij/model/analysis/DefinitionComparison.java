@@ -6,14 +6,9 @@ import java.util.List;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 
-public abstract class DefinitionComparison extends AbstractMultiMethodAnalysis {
-
-	public DefinitionComparison(ProcessingEnvironment processingEnv) {
-		super(processingEnv);
-	}
-
+public interface DefinitionComparison extends MultiMethodAnalysis {
 	@Override
-	public boolean check(List<ExecutableElement> definitions) {
+	default boolean check(List<ExecutableElement> definitions) {
 		Iterator<ExecutableElement> iter = definitions.iterator();
 		if (iter.hasNext()) {
 			ExecutableElement current = iter.next();
@@ -29,5 +24,5 @@ public abstract class DefinitionComparison extends AbstractMultiMethodAnalysis {
 		}
 	}
 
-	public abstract boolean checkOne(ExecutableElement current, ExecutableElement added);
+	boolean checkOne(ExecutableElement current, ExecutableElement added);
 }

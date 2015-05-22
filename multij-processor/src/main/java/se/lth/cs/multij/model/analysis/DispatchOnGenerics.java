@@ -13,7 +13,7 @@ import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.tools.Diagnostic;
 
-public class DispatchOnGenerics extends AbstractMultiMethodAnalysis {
+public class DispatchOnGenerics extends AnalysisBase implements MultiMethodAnalysis {
 	private static final HasGenerics hasGenerics = new HasGenerics();
 
 	public DispatchOnGenerics(ProcessingEnvironment processingEnv) {

@@ -10,7 +10,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.tools.Diagnostic.Kind;
 
-public class ObjectMethodNames extends AbstractMultiMethodAnalysis {
+public class ObjectMethodNames extends AnalysisBase implements MultiMethodAnalysis {
 	private static final Set<String> forbidden = Stream.of(Object.class.getDeclaredMethods())
 			.map(Method::getName)
 			.collect(Collectors.toSet());

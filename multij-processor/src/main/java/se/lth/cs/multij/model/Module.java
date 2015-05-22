@@ -99,11 +99,11 @@ public class Module {
 			}
 		}
 
-		List<MultiMethod> multiMethods = multiMethodDefinitions.stream()
-				.map(defs -> MultiMethod.fromExecutableElements(defs, processingEnv))
-				.collect(Collectors.toList());
-
 		if (analysisPassed) {
+			List<MultiMethod> multiMethods = multiMethodDefinitions.stream()
+					.map(defs -> MultiMethod.fromExecutableElements(defs, processingEnv))
+					.collect(Collectors.toList());
+
 			return Optional.of(new Module(typeElement, moduleRefs, cachedAttrs, multiMethods));
 		} else {
 			return Optional.empty();

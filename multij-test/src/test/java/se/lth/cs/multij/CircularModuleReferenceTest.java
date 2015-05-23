@@ -7,7 +7,7 @@ import static org.junit.Assert.assertEquals;
 public class CircularModuleReferenceTest {
 	@Module
 	public interface A {
-		@Module B b();
+		@Binding B b();
 		default int test(Object o) {
 			return 1;
 		}
@@ -18,7 +18,7 @@ public class CircularModuleReferenceTest {
 
 	@Module
 	public interface B {
-		@Module A a();
+		@Binding A a();
 		default int test(Object o) {
 			return 3;
 		}

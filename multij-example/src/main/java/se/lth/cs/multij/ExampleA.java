@@ -29,6 +29,8 @@ public interface ExampleA {
 
 	public void missingDefinition();
 
+	@Binding String str();
+
 	public default void wildcard(Object o, List<?> list) {
 	}
 

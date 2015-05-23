@@ -10,7 +10,7 @@ import static org.junit.Assert.fail;
 public class CacheTest {
 	@Module
 	interface ObjectRef {
-		@Cached
+		@Binding
 		default Object obj() {
 			return new Object();
 		}
@@ -26,17 +26,17 @@ public class CacheTest {
 
 	@Module
 	interface Primitive {
-		@Cached
+		@Binding
 		default AtomicInteger intBox() {
 			return new AtomicInteger();
 		}
 
-		@Cached
+		@Binding
 		default int intValA() {
 			return intBox().get();
 		}
 
-		@Cached
+		@Binding
 		default int intValB() {
 			return intBox().get();
 		}
@@ -55,12 +55,12 @@ public class CacheTest {
 
 	@Module
 	interface Circularity {
-		@Cached
+		@Binding
 		default Object a() {
 			return b();
 		}
 
-		@Cached
+		@Binding
 		default Object b() {
 			return a();
 		}
@@ -76,11 +76,11 @@ public class CacheTest {
 
 	@Module
 	interface InitException {
-		@Cached
+		@Binding
 		default Object a() {
 			throw new Ex();
 		}
-		@Cached
+		@Binding
 		default Object b() {
 			return a();
 		}

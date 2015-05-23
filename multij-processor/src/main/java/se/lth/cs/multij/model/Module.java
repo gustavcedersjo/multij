@@ -1,6 +1,7 @@
 package se.lth.cs.multij.model;
 
-import se.lth.cs.multij.Cached;
+import se.lth.cs.multij.Binding;
+import se.lth.cs.multij.BindingKind;
 import se.lth.cs.multij.model.analysis.*;
 
 import static javax.lang.model.util.ElementFilter.methodsIn;
@@ -8,25 +9,28 @@ import static javax.lang.model.util.ElementFilter.methodsIn;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Name;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
 
 public class Module {
 	private final TypeElement typeElement;
 	private final List<ExecutableElement> moduleReferences;
 	private final List<ExecutableElement> cachedAttributes;
+	private final List<ExecutableElement> injectedAttributes;
 	private final List<MultiMethod> multiMethods;
 
-	private Module(TypeElement typeElement, List<ExecutableElement> moduleReferences, List<ExecutableElement> cachedAttributes, List<MultiMethod> multiMethods) {
+	private Module(TypeElement typeElement, List<ExecutableElement> moduleReferences, List<ExecutableElement> cachedAttributes, List<ExecutableElement> injectedAttributes, List<MultiMethod> multiMethods) {
 		this.typeElement = typeElement;
 		this.moduleReferences = moduleReferences;
 		this.cachedAttributes = cachedAttributes;
+		this.injectedAttributes = injectedAttributes;
 		this.multiMethods = multiMethods;
 	}
 
@@ -42,6 +46,10 @@ public class Module {
 		return cachedAttributes;
 	}
 
+	public List<ExecutableElement> getInjectedAttributes() {
+		return injectedAttributes;
+	}
+
 	public List<MultiMethod> getMultiMethods() {
 		return multiMethods;
 	}
@@ -52,38 +60,31 @@ public class Module {
 					typeElement);
 			return Optional.empty();
 		}
-		boolean analysisPassed = true;
-		Analysis analysis = Analysis.defaultAnalysis(processingEnv);
 
 		List<ExecutableElement> methods = methodsIn(processingEnv.getElementUtils().getAllMembers(typeElement));
 
-		List<ExecutableElement> moduleRefs = methods.stream()
+		List<ExecutableElement> bindings = methods.stream()
 				.filter(m -> m.getParameters().isEmpty())
-				.filter(m -> m.getAnnotation(se.lth.cs.multij.Module.class) != null)
+				.filter(m -> m.getAnnotation(Binding.class) != null)
 				.collect(Collectors.toList());
 
-		for (ExecutableElement ref : moduleRefs) {
-			if (!analysis.checkModuleRef(ref)) {
-				analysisPassed = false;
-			}
-		}
-
-		List<ExecutableElement> cachedAttrs = methods.stream()
-				.filter(m -> m.getParameters().isEmpty())
-				.filter(m -> m.getAnnotation(Cached.class) != null)
-				.filter(d -> !moduleRefs.contains(d))
+		List<ExecutableElement> lazyBindings = bindings.stream()
+				.filter(Module::isLazyBinding)
 				.collect(Collectors.toList());
 
-		for (ExecutableElement attr : cachedAttrs) {
-			if (!analysis.checkCachedAttr(attr)) {
-				analysisPassed = false;
-			}
-		}
+		List<ExecutableElement> moduleBindings = bindings.stream()
+				.filter(m -> !lazyBindings.contains(m))
+				.filter(Module::isModuleBinding)
+				.collect(Collectors.toList());
+
+		List<ExecutableElement> injectedBindings = bindings.stream()
+				.filter(m -> !lazyBindings.contains(m))
+				.filter(m -> !moduleBindings.contains(m))
+				.collect(Collectors.toList());
 
 		Set<Name> methodNames = methods.stream()
 				.filter(d -> !isDefinedInObject(d))
-				.filter(d -> !moduleRefs.contains(d))
-				.filter(d -> !cachedAttrs.contains(d))
+				.filter(d -> !bindings.contains(d))
 				.map(ExecutableElement::getSimpleName)
 				.collect(Collectors.toSet());
 
@@ -93,21 +94,52 @@ public class Module {
 						.collect(Collectors.toList()))
 				.collect(Collectors.toList());
 
-		for (List<ExecutableElement> defs : multiMethodDefinitions) {
-			if (!analysis.checkMultiMethod(defs)) {
-				analysisPassed = false;
-			}
-		}
+		Analysis analysis = Analysis.defaultAnalysis(processingEnv);
 
-		if (analysisPassed) {
+		boolean analysisResult =
+				checkAll(moduleBindings, analysis::checkModuleBinding) &
+				checkAll(lazyBindings, analysis::checkLazyBinding) &
+				checkAll(injectedBindings, analysis::checkInjectedBinding) &
+				checkAll(multiMethodDefinitions, analysis::checkMultiMethod);
+
+		if (analysisResult) {
 			List<MultiMethod> multiMethods = multiMethodDefinitions.stream()
 					.map(defs -> MultiMethod.fromExecutableElements(defs, processingEnv))
 					.collect(Collectors.toList());
 
-			return Optional.of(new Module(typeElement, moduleRefs, cachedAttrs, multiMethods));
+			return Optional.of(new Module(typeElement, moduleBindings, lazyBindings, injectedBindings, multiMethods));
 		} else {
 			return Optional.empty();
 		}
+	}
+
+	private static <T> boolean checkAll(List<T> subjects, Predicate<T> check) {
+		boolean result = true;
+		for (T subject : subjects) {
+			if (!check.test(subject)) {
+				result = false;
+			}
+		}
+		return result;
+	}
+
+	private static boolean isModuleType(TypeMirror type) {
+		if (type.getKind() == TypeKind.DECLARED) {
+			Element element = ((DeclaredType) type).asElement();
+			return element.getAnnotation(se.lth.cs.multij.Module.class) != null;
+		} else {
+			return false;
+		}
+	}
+
+	private static boolean isModuleBinding(ExecutableElement m) {
+		Binding annotation = m.getAnnotation(Binding.class);
+		return annotation.value() == BindingKind.MODULE || (annotation.value() == BindingKind.AUTO && isModuleType(m.getReturnType()));
+	}
+
+	private static boolean isLazyBinding(ExecutableElement m) {
+		Binding annotation = m.getAnnotation(Binding.class);
+		return annotation.value() == BindingKind.LAZY || (annotation.value() == BindingKind.AUTO && m.isDefault());
 	}
 
 	private static boolean isDefinedInObject(ExecutableElement d) {

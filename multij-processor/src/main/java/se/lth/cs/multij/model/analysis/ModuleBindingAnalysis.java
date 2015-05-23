@@ -2,6 +2,6 @@ package se.lth.cs.multij.model.analysis;
 
 import javax.lang.model.element.ExecutableElement;
 
-public interface ModuleReferenceAnalysis {
+public interface ModuleBindingAnalysis {
 	boolean check(ExecutableElement methodRef);
 }

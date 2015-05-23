@@ -12,10 +12,7 @@ import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 
-import se.lth.cs.multij.AmbiguityException;
-import se.lth.cs.multij.CircularityException;
-import se.lth.cs.multij.MissingDefinitionException;
-import se.lth.cs.multij.ModuleRepository;
+import se.lth.cs.multij.*;
 import se.lth.cs.multij.model.DecisionTree;
 import se.lth.cs.multij.model.EntryPoint;
 import se.lth.cs.multij.model.Module;
@@ -53,10 +50,11 @@ public class CodeGenerator {
 			if (!pkg.isUnnamed()) {
 				writer.format("package %s;\n", pkg.getQualifiedName());
 			}
-			writer.format("public final class %s implements %s {\n", className, module.getTypeElement()
-					.getQualifiedName());
+			writer.format("public final class %s implements %s, %s {\n", className, module.getTypeElement()
+					.getQualifiedName(), MultiJModule.class.getCanonicalName());
 
 			generateModuleRefs(module, writer);
+			generateInjecions(module, writer);
 			generateCachedAttrs(module, writer);
 			generateMultiMethods(module, writer);
 
@@ -92,6 +90,60 @@ public class CodeGenerator {
 		}
 		writer.println("\t\tmultij$initialized = true;");
 		writer.println("\t}\n");
+	}
+
+	private void generateInjecions(Module module, PrintWriter writer) {
+		for (ExecutableElement attr : module.getInjectedAttributes()) {
+			Name name = attr.getSimpleName();
+			TypeMirror type = attr.getReturnType();
+			writer.format("\tprivate boolean inj$init$%s;\n", name);
+			writer.format("\tprivate %s inj$attr$%s;\n\n", type, name);
+			writer.format("\tpublic %s %s() { return inj$attr$%2$s; }\n\n", type, name);
+		}
+
+		String notFound = MultiJModule.NotFound.class.getCanonicalName();
+		String wrongType = MultiJModule.WrongType.class.getCanonicalName();
+		String alreadySet = MultiJModule.AlreadySet.class.getCanonicalName();
+		String multijModule = MultiJModule.class.getCanonicalName();
+		writer.format("\tpublic %s multij$getModule(String name) throws %s {\n", multijModule, notFound);
+		writer.format("\t\tswitch(name) {\n");
+		for (ExecutableElement modRef : module.getModuleReferences()) {
+			writer.format("\t\tcase \"%1$s\": return (%2$s) module$%1$s;\n", modRef.getSimpleName(), MultiJModule.class.getCanonicalName());
+		}
+		writer.format("\t\tdefault: throw new %s();\n", notFound);
+		writer.format("\t\t}\n");
+		writer.format("\t}\n\n");
+
+		writer.format("\tpublic void multij$setField(String name, Object value) throws %s, %s, %s{\n", notFound, wrongType, alreadySet);
+		writer.format("\t\tswitch(name) {\n");
+		for (ExecutableElement inj : module.getInjectedAttributes()) {
+			Name name = inj.getSimpleName();
+			TypeMirror type = processingEnv.getTypeUtils().erasure(inj.getReturnType());
+			writer.format("\t\tcase \"%s\":\n", name);
+			writer.format("\t\t\tif (inj$init$%s) {\n", name);
+			writer.format("\t\t\t\tthrow new %s();\n", alreadySet);
+			writer.format("\t\t\t} else if (value instanceof %s) {\n", type);
+			writer.format("\t\t\t\tinj$init$%s = true;\n", name);
+			writer.format("\t\t\t\tinj$attr$%s = (%s) value;\n", name, type);
+			writer.format("\t\t\t\treturn;\n");
+			writer.format("\t\t\t} else {\n");
+			writer.format("\t\t\t\tthrow new %s(%s.class);\n", wrongType, type);
+			writer.format("\t\t\t}\n");
+		}
+		writer.format("\t\tdefault: throw new %s();\n", notFound);
+		writer.format("\t\t}\n");
+		writer.format("\t}\n\n");
+
+		writer.format("\tpublic void multij$checkInjected(java.util.Set<%s> visited, java.util.List<String> prefix) {\n", multijModule);
+		writer.format("\t\tif (visited.contains(this)) return;\n");
+		writer.format("\t\tvisited.add(this);\n");
+		for (ExecutableElement inj : module.getInjectedAttributes()) {
+			writer.format("\t\tif (!inj$init$%s) {\n", inj.getSimpleName());
+			writer.format("\t\t\tprefix.add(\"%s\");\n", inj.getSimpleName());
+			writer.format("\t\t\tthrow %s.notInjected(prefix.toArray(new String[prefix.size()]));\n", InjectionException.class.getCanonicalName());
+			writer.format("\t\t}\n");
+		}
+		writer.format("\t}\n\n");
 	}
 
 	private void generateCachedAttrs(Module module, PrintWriter writer) {
@@ -146,7 +198,7 @@ public class CodeGenerator {
 			} else {
 				typeParDecl = entryPoint.getTypeParameters()
 						.stream()
-						.map(t -> t.toString())
+						.map(Object::toString)
 						.collect(Collectors.joining(", ", "<", "> "));
 			}
 			writer.format("\tpublic %s%s %s(", typeParDecl, entryPoint.getReturnType(), entryPoint.getSimpleName());

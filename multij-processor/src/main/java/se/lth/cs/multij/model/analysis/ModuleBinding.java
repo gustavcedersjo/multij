@@ -10,9 +10,9 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 
-public class ModuleReference extends AnalysisBase implements ModuleReferenceAnalysis {
+public class ModuleBinding extends AnalysisBase implements ModuleBindingAnalysis {
 
-	public ModuleReference(ProcessingEnvironment processingEnv) {
+	public ModuleBinding(ProcessingEnvironment processingEnv) {
 		super(processingEnv);
 	}
 

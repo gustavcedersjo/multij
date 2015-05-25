@@ -23,10 +23,15 @@ public interface Analysis {
 				new DispatchOnGenerics(processingEnv)
 		);
 		final List<ModuleBindingAnalysis> moduleBindingAnalyses = Arrays.asList(
-				new ModuleBinding(processingEnv)
+				new ModuleBinding(processingEnv),
+				new VoidBinding(processingEnv)
 		);
-		final List<LazyBindingAnalysis> lazyBindingAnalyses = Arrays.asList();
-		final List<InjectedBindingAnalysis> injectedBindingAnalyses = Arrays.asList();
+		final List<LazyBindingAnalysis> lazyBindingAnalyses = Arrays.asList(
+				new VoidBinding(processingEnv)
+		);
+		final List<InjectedBindingAnalysis> injectedBindingAnalyses = Arrays.asList(
+				new VoidBinding(processingEnv)
+		);
 		return new Analysis() {
 			public boolean checkMultiMethod(List<ExecutableElement> definitions) {
 				return multiMethodAnalyses.stream().allMatch(analysis -> analysis.check(definitions));

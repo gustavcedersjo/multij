@@ -30,6 +30,7 @@ public interface Analysis {
 				new VoidBinding(processingEnv)
 		);
 		final List<InjectedBindingAnalysis> injectedBindingAnalyses = Arrays.asList(
+				new InjectedBindingTypeParameter(processingEnv),
 				new VoidBinding(processingEnv)
 		);
 		return new Analysis() {

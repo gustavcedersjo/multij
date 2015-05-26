@@ -9,7 +9,6 @@
 	<modules>
 		<module>multij-core</module>
 		<module>multij-processor</module>
-		<module>multij-example</module>
 		<module>multij-test</module>
   </modules>
 	<build>

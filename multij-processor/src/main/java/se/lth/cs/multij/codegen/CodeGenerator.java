@@ -154,11 +154,11 @@ public class CodeGenerator {
 			writer.format("boolean cache$init$%s = false;\n", name);
 			writer.format("boolean cache$done$%s = false;\n", name);
 			writer.format("%s cache$value$%s;\n\n", type, name);
-			writer.format("public synchronized %s %s() {", type, name);
-			writer.format("\tif (cache$done$%s) {", name);
+			writer.format("public synchronized %s %s() {\n", type, name);
+			writer.format("\tif (cache$done$%s) {\n", name);
 			writer.format("\t\treturn cache$value$%s;\n", name);
 			writer.format("\t} else if (cache$init$%s) {\n", name);
-			writer.format("\t\tthrow new CircularityException();\n");
+			writer.format("\t\tthrow new %s();\n", CircularityException.class.getCanonicalName());
 			writer.format("\t} else {\n");
 			writer.format("\t\ttry {\n");
 			writer.format("\t\t\tcache$init$%s = true;\n", name);

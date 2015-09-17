@@ -198,7 +198,15 @@ public class CodeGenerator {
 			} else {
 				typeParDecl = entryPoint.getTypeParameters()
 						.stream()
-						.map(Object::toString)
+						.map(type -> {
+							String name = type.toString();
+							if (!type.getBounds().isEmpty()) {
+								name += type.getBounds().stream()
+										.map(TypeMirror::toString)
+										.collect(Collectors.joining(" & ", " extends ", ""));
+							}
+							return name;
+						})
 						.collect(Collectors.joining(", ", "<", "> "));
 			}
 			writer.format("\tpublic %s%s %s(", typeParDecl, entryPoint.getReturnType(), entryPoint.getSimpleName());

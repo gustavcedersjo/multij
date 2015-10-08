@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>MultiJ by gustavcedersjo</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>MultiJ</h1>
+        <p>Multi-methods for Java</p>
+
+        <p class="view"><a href="https://github.com/gustavcedersjo/multij">View the Project on GitHub <small>gustavcedersjo/multij</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/gustavcedersjo/multij/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/gustavcedersjo/multij/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/gustavcedersjo/multij">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a id="multij" class="anchor" href="#multij" aria-hidden="true"><span class="octicon octicon-link"></span></a>MultiJ</h1>
+
+<p>MultiJ provides multi-methods to Java.</p>
+
+<h2>
+<a id="example" class="anchor" href="#example" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example</h2>
+
+<p>Multi-methods are defined as methods in a Java interface with the annotation <code>@Module</code>.</p>
+
+<div class="highlight highlight-source-java"><pre>@<span class="pl-smi">Module</span>
+<span class="pl-k">interface</span> <span class="pl-en">Example</span> {
+    default <span class="pl-k">int</span> <span class="pl-en">test</span>(<span class="pl-smi">Object</span> <span class="pl-v">o</span>) {
+        <span class="pl-k">return</span> <span class="pl-c1">1</span>;
+    }
+    default <span class="pl-k">int</span> <span class="pl-en">test</span>(<span class="pl-smi">String</span> <span class="pl-v">s</span>) {
+        <span class="pl-k">return</span> <span class="pl-c1">2</span>;
+    }
+}</pre></div>
+
+<p>The multi-method <code>test</code> is invoked by first creating an instance of the module and then invoking any of the <code>test</code> methods on the instance. MultiJ will select the most specific method with respect to the runtime types of the arguments.</p>
+
+<div class="highlight highlight-source-java"><pre><span class="pl-smi">Example</span> example <span class="pl-k">=</span> <span class="pl-smi">MultiJ</span><span class="pl-k">.</span>instance(<span class="pl-smi">Example</span><span class="pl-k">.</span>class);
+<span class="pl-smi">Object</span> o <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>hello<span class="pl-pds">"</span></span>;
+<span class="pl-k">int</span> x <span class="pl-k">=</span> example<span class="pl-k">.</span>test(o); <span class="pl-c">// x = 2</span></pre></div>
+
+<p>Doing the same thing on a regular Java object would not generate the same result.</p>
+
+<div class="highlight highlight-source-java"><pre><span class="pl-smi">Example</span> example <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">Example</span>() {};
+<span class="pl-smi">Object</span> o <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span>hello<span class="pl-pds">"</span></span>;
+<span class="pl-k">int</span> x <span class="pl-k">=</span> example<span class="pl-k">.</span>test(o); <span class="pl-c">// x = 1</span></pre></div>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/gustavcedersjo">gustavcedersjo</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>

@@ -1,6 +1,6 @@
 package data;
 
-import se.lth.cs.multij.Module;
+import org.multij.Module;
 
 @Module
 public interface IncorrectArity {

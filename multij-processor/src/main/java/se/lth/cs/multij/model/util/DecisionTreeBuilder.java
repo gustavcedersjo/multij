@@ -60,7 +60,7 @@ public class DecisionTreeBuilder {
 				if (mostSpecific.size() == 1) {
 					return new DecisionTree.DecisionNode(mostSpecific.get(0));
 				} else {
-					return new DecisionTree.AmbiguityNode(selectable);
+					return new DecisionTree.AmbiguityNode(mostSpecific);
 				}
 			}
 		} else {

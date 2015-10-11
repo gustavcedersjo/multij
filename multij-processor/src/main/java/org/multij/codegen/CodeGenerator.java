@@ -25,7 +25,10 @@ import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CodeGenerator {
 	private final ProcessingEnvironment processingEnv;
@@ -268,7 +271,20 @@ public class CodeGenerator {
 					println("return;");
 				}
 			} else {
-				println("throw new " + MissingDefinitionException.class.getCanonicalName() + "();");
+				List<String> parameters = new ArrayList<>();
+				parameters.add("\"" + moduleName + "\"");
+				parameters.add("\"" + node.getDefinition().getSimpleName() + "\"");
+				int i = 0;
+				for (VariableElement p : node.getDefinition().getParameters()) {
+					if (p.asType().getKind() == TypeKind.DECLARED) {
+						parameters.add("p"+i+".getClass().getCanonicalName()");
+					} else {
+						parameters.add("\"" + p.asType().toString() + "\"");
+					}
+					i++;
+				}
+				String params = String.join(", ", parameters);
+				println("throw new " + MissingDefinitionException.class.getCanonicalName() + "(" + params + ");");
 			}
 		}
 

@@ -17,9 +17,13 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
@@ -28,7 +32,6 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class CodeGenerator {
 	private final ProcessingEnvironment processingEnv;
@@ -80,7 +83,7 @@ public class CodeGenerator {
 	private void generateMultiMethods(Module module, PrintWriter writer) {
 		for (MultiMethod multiMethod : module.getMultiMethods()) {
 			for (EntryPoint entryPoint : multiMethod.getEntryPoints()) {
-				MethodCodeGenerator gen = new MethodCodeGenerator(module.getTypeElement().getQualifiedName(),
+				MethodCodeGenerator gen = new MethodCodeGenerator(module.getTypeElement(),
 						writer, entryPoint);
 				gen.generateCode();
 			}
@@ -191,46 +194,49 @@ public class CodeGenerator {
 	private class MethodCodeGenerator implements DecisionTree.Visitor {
 
 		private int indentation = 2;
+		private final TypeElement module;
 		private final Name moduleName;
 		private final PrintWriter writer;
 		private final EntryPoint tree;
 		private final ExecutableElement entryPoint;
 
-		public MethodCodeGenerator(Name moduleName, PrintWriter writer, EntryPoint tree) {
-			this.moduleName = moduleName;
+		public MethodCodeGenerator(TypeElement module, PrintWriter writer, EntryPoint tree) {
+			this.module = module;
+			this.moduleName = module.getQualifiedName();
 			this.writer = writer;
 			this.tree = tree;
 			this.entryPoint = tree.getEntryPoint();
 		}
 
 		public void generateCode() {
+			ExecutableType methodType = (ExecutableType) typeUtil().asMemberOf((DeclaredType) module.asType(), entryPoint);
 			String typeParDecl;
-			if (entryPoint.getTypeParameters().isEmpty()) {
+			if (methodType.getTypeVariables().isEmpty()) {
 				typeParDecl = "";
 			} else {
-				typeParDecl = entryPoint.getTypeParameters()
+				typeParDecl = methodType.getTypeVariables()
 						.stream()
-						.map(type -> {
-							String name = type.toString();
-							if (!type.getBounds().isEmpty()) {
-								name += type.getBounds().stream()
-										.map(TypeMirror::toString)
-										.collect(Collectors.joining(" & ", " extends ", ""));
+						.map((TypeVariable type) -> {
+							String t = type.toString();
+							if (type.getUpperBound() != null) {
+								t = t + " extends " + type.getUpperBound();
 							}
-							return name;
+							return t;
 						})
 						.collect(Collectors.joining(", ", "<", "> "));
 			}
-			writer.format("\tpublic %s%s %s(", typeParDecl, entryPoint.getReturnType(), entryPoint.getSimpleName());
+			writer.format("\tpublic %s%s %s(", typeParDecl, methodType.getReturnType(), entryPoint.getSimpleName());
+
 			int i = 0;
-			for (VariableElement var : entryPoint.getParameters()) {
+			for (TypeMirror type : methodType.getParameterTypes()) {
 				if (i > 0) {
 					writer.print(", ");
 				}
-				writer.print(var.asType());
+				writer.print(type);
 				writer.print(" p");
 				writer.print(i++);
 			}
+
 			writer.println(") {");
 			generateForNode(tree.getDecisionTree());
 			writer.println("\t}\n");

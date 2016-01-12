@@ -1,10 +1,11 @@
 package org.multij;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ModuleRepository {
+	private static Map<Class<?>, Class<?>> classCache = new ConcurrentHashMap<>();
 	private final Map<Class<?>, Object> cache;
 
 	public ModuleRepository() {
@@ -17,16 +18,21 @@ public class ModuleRepository {
 		} else {
 			T instance = instantiate(module);
 			cache.put(module, instance);
-			try {
-				instance.getClass().getMethod("multij$init", ModuleRepository.class).invoke(instance, this);
-			} catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-				throw new RuntimeException(e);
-			}
+			((MultiJModule) instance).multij$init(this);
 			return instance;
 		}
 	}
 
 	private <T> T instantiate(Class<T> module) {
+		Class<?> implClass = classCache.computeIfAbsent(module, this::lookupImplementationClass);
+		try {
+			return module.cast(implClass.newInstance());
+		} catch (InstantiationException | IllegalAccessException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private Class<?> lookupImplementationClass(Class<?> module) {
 		if (module.getAnnotation(Module.class) != null) {
 			try {
 				Class<?> klass = module;
@@ -36,8 +42,8 @@ public class ModuleRepository {
 					klass = klass.getEnclosingClass();
 				} while (klass != null);
 				name = module.getPackage().getName() + "." + name;
-				return module.cast(Class.forName(name).newInstance());
-			} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+				return Class.forName(name);
+			} catch (ClassNotFoundException e) {
 				throw new RuntimeException(e);
 			}
 		} else {

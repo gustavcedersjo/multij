@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Set;
 
 public interface MultiJModule {
+	void multij$init(ModuleRepository repo);
+
 	MultiJModule multij$getModule(String name) throws NotFound;
 
 	void multij$setField(String name, Object value) throws NotFound, WrongType, AlreadySet;

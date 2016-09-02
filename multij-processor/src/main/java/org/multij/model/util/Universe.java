@@ -96,10 +96,11 @@ public class Universe {
 			if (built) {
 				throw new IllegalStateException();
 			}
-			if (types.stream().anyMatch(t -> util.isSameType(t, type))) {
+			TypeMirror erasure = util.erasure(type);
+			if (types.stream().anyMatch(t -> util.isSameType(t, erasure))) {
 				return;
 			}
-			types.add(type);
+			types.add(erasure);
 		}
 
 		public Universe build() {

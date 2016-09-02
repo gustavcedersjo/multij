@@ -43,7 +43,7 @@ public class DecisionTreeBuilder {
 		List<Condition> result = new ArrayList<>(definition.getParameters().size());
 		int i = 0;
 		for (VariableElement par : definition.getParameters()) {
-			result.add(new Condition(i++, par.asType()));
+			result.add(new Condition(i++, typeUtil.erasure(par.asType())));
 		}
 		return result;
 	}

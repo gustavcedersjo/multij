@@ -283,7 +283,7 @@ public class CodeGenerator {
 				int i = 0;
 				for (VariableElement p : node.getDefinition().getParameters()) {
 					if (p.asType().getKind() == TypeKind.DECLARED) {
-						parameters.add("p"+i+".getClass().getCanonicalName()");
+						parameters.add("p"+i+" == null ? \"null\" : p"+i+".getClass().getCanonicalName()");
 					} else {
 						parameters.add("\"" + p.asType().toString() + "\"");
 					}

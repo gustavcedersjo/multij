@@ -26,4 +26,10 @@ public class MissingDefinitionTest {
 	public void missingDefinitionForSupertype() {
 		MultiJ.instance(MissingDefinitionForSupertype.class).method(Integer.valueOf(3));
 	}
+
+	@Test(expected = MissingDefinitionException.class)
+	public void missingDefinitionForNull() {
+		Object n = null;
+		MultiJ.instance(MissingDefinitionForSupertype.class).method(n);
+	}
 }

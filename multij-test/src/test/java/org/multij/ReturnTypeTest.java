@@ -17,12 +17,20 @@ public class ReturnTypeTest {
 	}
 
 	@Test
+	public void covariantReturnType() {
+		assert_().about(javaSource())
+				.that(forResource("data/CovariantReturnType.java"))
+				.processedWith(new ModuleProcessor())
+				.compilesWithoutError();
+	}
+
+	@Test
 	public void differentReturnType() {
 		assert_().about(javaSource())
 				.that(forResource("data/DifferentReturnType.java"))
 				.processedWith(new ModuleProcessor())
 				.failsToCompile()
-				.withErrorContaining("Method is defined with other return type elsewhere");
+				.withErrorContaining("Return type java.lang.Double is not a subtype of java.lang.String.");
 	}
 
 }

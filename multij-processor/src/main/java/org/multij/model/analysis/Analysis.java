@@ -18,7 +18,7 @@ public interface Analysis {
 		final List<MultiMethodAnalysis> multiMethodAnalyses = Arrays.asList(
 				new MethodArity(processingEnv),
 				new MatchingPrimitiveTypes(processingEnv),
-				new ReturnTypeAnalysis(processingEnv),
+				new CovariantReturnTypeAnalysis(processingEnv),
 				new ObjectMethodNames(processingEnv),
 				new DispatchOnGenerics(processingEnv)
 		);

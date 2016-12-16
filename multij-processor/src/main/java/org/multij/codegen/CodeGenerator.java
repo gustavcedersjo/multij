@@ -137,7 +137,7 @@ public class CodeGenerator {
 			writer.format("\t\tcase \"%s\":\n", name);
 			writer.format("\t\t\tif (inj$init$%s) {\n", name);
 			writer.format("\t\t\t\tthrow new %s();\n", alreadySet);
-			writer.format("\t\t\t} else if (value instanceof %s) {\n", type);
+			writer.format("\t\t\t} else if (value instanceof %s || value == null) {\n", type);
 			writer.format("\t\t\t\tinj$init$%s = true;\n", name);
 			writer.format("\t\t\t\tinj$attr$%s = (%s) value;\n", name, type);
 			writer.format("\t\t\t\treturn;\n");

@@ -41,7 +41,10 @@ public class ModuleRepository {
 					name = klass.getSimpleName() + "$" + name;
 					klass = klass.getEnclosingClass();
 				} while (klass != null);
-				name = module.getPackage().getName() + "." + name;
+				Package pkg = module.getPackage();
+				if (pkg != null) {
+					name = pkg.getName() + "." + name;
+				}
 				return Class.forName(name);
 			} catch (ClassNotFoundException e) {
 				throw new RuntimeException(e);

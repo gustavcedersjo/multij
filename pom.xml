@@ -4,7 +4,7 @@
 
 	<groupId>org.multij</groupId>
 	<artifactId>multij-project</artifactId>
-	<version>0.1</version>
+	<version>0.1.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>${project.groupId}:${project.artifactId}</name>
